@@ -40,10 +40,26 @@ def use_staging_enabled() -> bool:
 
 
 def _api_key() -> str:
-    key = os.getenv("WINCHER_API_KEY")
+    if use_staging_enabled():
+        key = (os.getenv("WINCHER_STAGING_API_KEY") or os.getenv("WINCHER_API_KEY") or "").strip()
+        if not key:
+            raise ValueError(
+                "WINCHER_STAGING_API_KEY (or WINCHER_API_KEY) environment variable not set"
+            )
+        return key
+    key = (os.getenv("WINCHER_API_KEY") or "").strip()
     if not key:
         raise ValueError("WINCHER_API_KEY environment variable not set")
     return key
+
+
+def _api_path(relative: str) -> str:
+    """Build versioned API path. Staging host often omits the /v1 prefix in the base URL."""
+    rel = relative.lstrip("/")
+    base = base_url().rstrip("/")
+    if use_staging_enabled() and not base.endswith("/v1"):
+        return f"/{rel}"
+    return f"/v1/{rel}"
 
 
 def _validate_api_base_url(url: str, *, staging: bool) -> str:
@@ -316,7 +332,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
     try:
         if name == "get_websites":
-            endpoint = "/v1/websites"
+            endpoint = _api_path("websites")
             data = await make_wincher_request(endpoint)
             def format_site(site: dict) -> str:
                 block = (
@@ -344,7 +360,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         
         elif name == "get_keywords":
             website_id = _positive_int("website_id", arguments["website_id"])
-            endpoint = f"/v1/websites/{website_id}/keywords"
+            endpoint = _api_path(f"websites/{website_id}/keywords")
             data = await make_wincher_request(endpoint)
 
             def format_keyword(kw: dict) -> str:
@@ -367,7 +383,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         elif name == "get_keyword_rankings":
             keyword_id = _positive_int("keyword_id", arguments["keyword_id"])
             website_id = _positive_int("website_id", arguments["website_id"])
-            endpoint = f"/v1/websites/{website_id}/keyword/{keyword_id}/ranking-history"
+            endpoint = _api_path(f"websites/{website_id}/keyword/{keyword_id}/ranking-history")
             data = await make_wincher_request(endpoint)
             
             def format_series(series: dict) -> str:
@@ -389,7 +405,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         
         elif name == "get_competitor_ranking_summaries":
             website_id = _positive_int("website_id", arguments["website_id"])
-            endpoint = f"/v1/websites/{website_id}/competitors/ranking-summaries"
+            endpoint = _api_path(f"websites/{website_id}/competitors/ranking-summaries")
             data = await make_wincher_request(endpoint)
             
             def format_summary(summary: dict) -> str:
@@ -415,7 +431,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         
         elif name == "get_competitor_keyword_positions":
             website_id = _positive_int("website_id", arguments["website_id"])
-            endpoint = f"/v1/websites/{website_id}/competitors/keyword-positions"
+            endpoint = _api_path(f"websites/{website_id}/competitors/keyword-positions")
             data = await make_wincher_request(endpoint)
             
             def format_position_row(item: dict) -> str:
@@ -438,7 +454,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         elif name == "get_serps":
             keyword_id = _positive_int("keyword_id", arguments["keyword_id"])
             website_id = _positive_int("website_id", arguments["website_id"])
-            endpoint = f"/v1/websites/{website_id}/keywords/{keyword_id}/serps"
+            endpoint = _api_path(f"websites/{website_id}/keywords/{keyword_id}/serps")
             data = await make_wincher_request(endpoint)
             
             def format_serp(serp: dict) -> str:
@@ -464,7 +480,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         
         elif name == "get_keyword_groups":
             website_id = _positive_int("website_id", arguments["website_id"])
-            endpoint = f"/v1/websites/{website_id}/groups"
+            endpoint = _api_path(f"websites/{website_id}/groups")
             data = await make_wincher_request(endpoint)
             
             def format_group(group: dict) -> str:
@@ -504,7 +520,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 "end_at": end_at
             }
 
-            endpoint = f"/v1/websites/{website_id}/ranking-history"
+            endpoint = _api_path(f"websites/{website_id}/ranking-history")
             data = await wincher_request("POST", endpoint, json_body=payload)
             
             def format_bulk_item(item: dict) -> str:
@@ -525,7 +541,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         
         elif name == "get_annotations":
             website_id = _positive_int("website_id", arguments["website_id"])
-            endpoint = f"/v1/websites/{website_id}/annotations"
+            endpoint = _api_path(f"websites/{website_id}/annotations")
             data = await make_wincher_request(endpoint)
             
             def format_annotation(annotation: dict) -> str:
