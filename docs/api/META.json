@@ -1,0 +1,10 @@
+{
+  "fetched_at": "2026-05-21T15:49:19Z",
+  "source_page": "https://www.wincher.com/docs/api",
+  "source_chunk": "https://www.wincher.com/_next/static/chunks/pages/docs/api-cb29fe91404dfe15.js",
+  "source_chunk_sha256": "88febfdfe958f0c098d30078bb0963b5e5cb2e0b0e11ce8f6c99a7b842a006cf",
+  "openapi_version": "3.0.0",
+  "api_title": "Wincher API",
+  "path_count": 24,
+  "production_server": "https://api.wincher.com/v1"
+}

@@ -137,6 +137,8 @@ If the file doesn't exist, create it. If it exists and has other MCP servers, ad
 }
 ```
 
+See [MCP_CONFIG.example.json](MCP_CONFIG.example.json). For optional staging, add `"--use-staging"` to `args` and set `WINCHER_STAGING_API_HOST` in `env` on your machine only (never commit the host value).
+
 **Adding to existing config:**
 ```json
 {

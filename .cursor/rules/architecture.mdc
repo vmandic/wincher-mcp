@@ -1,0 +1,70 @@
+---
+description: Use when adding MCP tools, changing Wincher API routes, or planning module layout in wincher-mcp.
+globs:
+  - wincher_mcp_server.py
+  - "**/*.py"
+  - docs/**
+alwaysApply: false
+---
+
+# Architecture
+
+## Current layout (monolith)
+
+| Unit | Role |
+|------|------|
+| `wincher_mcp_server.py` | MCP server, Wincher HTTP client, all tools |
+| `requirements.txt` | `mcp`, `httpx` |
+| `docs/SETUP.md`, `docs/EXAMPLES.md` | Human setup and prompt examples |
+
+No `src/` package yet. Prefer extending the single file until complexity warrants a split (`wincher_mcp/` package with `server.py`, `client.py`, `tools/`).
+
+## Data flow
+
+```
+Claude / Cursor  --stdio-->  MCP Server  --HTTPS Bearer-->  Wincher API (/v1/...)
+```
+
+- Production host: `PRODUCTION_BASE_URL` in code (`https://api.wincher.com`).
+- Staging: enabled by MCP arg `--use-staging` (in `args`, not env). Host only from `WINCHER_STAGING_API_HOST`. Never hardcode or document the staging URL in this repo.
+- Auth: `WINCHER_API_KEY` via `_api_key()` on every request.
+- HTTP: `wincher_request(method, endpoint)`; GET via `make_wincher_request()`.
+- Errors: `_format_http_error()` reports endpoint path only (no request URL; avoids leaking staging host).
+
+## Tool → API map
+
+OpenAPI `paths` in `docs/api/wincher-openapi.json` omit the `/v1` prefix (server base is `https://api.wincher.com/v1`).
+
+| MCP tool | Wincher endpoint |
+|----------|------------------|
+| `get_websites` | `GET /v1/websites` |
+| `get_keywords` | `GET /v1/websites/{id}/keywords` |
+| `get_keyword_rankings` | `GET /v1/websites/{id}/keyword/{kid}/ranking-history` |
+| `get_competitor_ranking_summaries` | `GET /v1/websites/{id}/competitors/ranking-summaries` |
+| `get_competitor_keyword_positions` | `GET /v1/websites/{id}/competitors/keyword-positions` |
+| `get_serps` | `GET /v1/websites/{id}/keywords/{kid}/serps` |
+| `get_keyword_groups` | `GET /v1/websites/{id}/groups` |
+| `get_bulk_ranking_history` | `POST /v1/websites/{id}/ranking-history` |
+| `get_annotations` | `GET /v1/websites/{id}/annotations` |
+
+## New tool checklist
+
+1. Confirm operation in [docs/api/wincher-openapi.json](../../docs/api/wincher-openapi.json) (or refresh via [update-api-spec](../skills/update-api-spec/SKILL.md)). Live docs: https://www.wincher.com/docs/api
+2. Add `Tool(...)` in `list_tools()` with schema.
+3. Add branch in `call_tool()`; reuse GET helper or POST pattern.
+4. Document in `README.md` tool list and add an example in `docs/EXAMPLES.md` if user-facing.
+5. Manual smoke test with valid `website_id` / `keyword_id` (see [testing](testing.mdc)).
+
+## Fork vs upstream
+
+- **`upstream`**: `chris-tutt/wincher-mcp-server` — pull selective fixes; avoid overwriting vmandic-specific docs/rules without intent.
+- **`origin`**: `vmandic/wincher-mcp` — default push target for this fork.
+
+## Red flags
+
+| Stop | Why |
+|------|-----|
+| Write/mutate Wincher data via API | Out of scope (read-only product) |
+| Caching API keys or responses on disk | Security / staleness |
+| Splitting modules without tests or user ask | Premature abstraction |
+| Staging host literal in repo or tool errors | Secret leak |

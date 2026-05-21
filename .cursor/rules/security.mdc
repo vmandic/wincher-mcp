@@ -1,0 +1,47 @@
+---
+description: Use when handling API keys, HTTP errors, dependencies, or MCP config in wincher-mcp.
+globs:
+  - wincher_mcp_server.py
+  - .env*
+  - requirements.txt
+  - security_best_practices_report.md
+alwaysApply: false
+---
+
+# Security
+
+## Secrets
+
+- **`WINCHER_API_KEY`** only via environment (Claude config `env`, `.env` locally, or shell export).
+- **`WINCHER_STAGING_API_HOST`**: set only in private MCP/`env` on your machine. **Never** commit, paste in PRs, add to README/docs/examples, or log/return in tool output.
+- Never commit `.env`, tokens, or keys in `claude_desktop_config.json` into the repo.
+- `.env.example` holds placeholders only (no staging host value).
+
+## API and transport
+
+- Production: HTTPS to `https://api.wincher.com`. Staging: HTTPS only via `_validate_api_base_url()` (blocks private/loopback IPs). MCP arg `--use-staging`, env `WINCHER_STAGING_API_HOST`. `httpx` uses `follow_redirects=False`.
+- Read-only product: do not add tools that create/update/delete Wincher resources without explicit product approval.
+- Stdio MCP has no network listener; keep it that way unless the user requests HTTP with a security review.
+
+## Error handling
+
+- Use **`_format_http_error()`**: status, endpoint path, body truncated to 200 chars. **Never** include `e.request.url` (staging host leak).
+- Do not log the Bearer token, `WINCHER_STAGING_API_HOST`, or full `Authorization` header.
+- Generic `Exception` messages should not include environment variable values.
+
+## Dependencies
+
+After changing `requirements.txt`:
+
+```bash
+pip install -r requirements.txt
+pip audit   # if pip-audit is available; otherwise note manual review
+```
+
+Pin major bumps only with user approval.
+
+## Ask first
+
+- Logging request/response bodies to files
+- Adding OAuth or multi-tenant credential stores
+- Exposing the server on `0.0.0.0` or adding an HTTP front door

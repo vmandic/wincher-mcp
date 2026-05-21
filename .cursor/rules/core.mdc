@@ -1,0 +1,55 @@
+---
+description: Use when working in wincher-mcp and need project identity, commands, or where detailed conventions live.
+alwaysApply: true
+---
+
+# wincher-mcp — core context
+
+**Wincher SEO** MCP server over stdio. User docs: [README.md](../../README.md). Agents: topic rules under `.cursor/rules/`.
+
+## Identity
+
+- Fork of [chris-tutt/wincher-mcp-server](https://github.com/chris-tutt/wincher-mcp-server)
+- Repo: https://github.com/vmandic/wincher-mcp
+- Single entry: `wincher_mcp_server.py` — MCP name `wincher-mcp`
+- Production API: `https://api.wincher.com` (Bearer `WINCHER_API_KEY`)
+- Optional staging: MCP arg `--use-staging` + env `WINCHER_STAGING_API_HOST` (host never in repo)
+- Nine read-only tools: websites, keywords, rankings, competitors, SERPs, groups, bulk history, annotations
+
+## Commands (repo root)
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+pytest -q && python -m py_compile wincher_mcp_server.py
+```
+
+Configure Claude Desktop or Cursor MCP with **absolute paths** to the venv Python and `wincher_mcp_server.py`. See [docs/SETUP.md](../../docs/SETUP.md).
+
+## Where rules live
+
+| Rule | Globs | Topic |
+|------|-------|--------|
+| [coding-guidelines](coding-guidelines.mdc) | `**/*.py` | Python, MCP stdio, formatting |
+| [architecture](architecture.mdc) | `**/*.py`, `docs/**` | Monolith layout, tools, API map |
+| [testing](testing.mdc) | `test/**`, server, `requirements.txt` | Verification |
+| [security](security.mdc) | server, `.env*`, deps | Keys, HTTP, errors |
+| [git-commit](git-commit.mdc) | `**/*` | Commit/push gates |
+| [releasing](releasing.mdc) | `**/*` | Tags and GitHub releases |
+
+## API spec (offline)
+
+- [docs/api/wincher-openapi.json](../../docs/api/wincher-openapi.json) — refresh: `python3 scripts/fetch_wincher_openapi.py` or [update-api-spec](../skills/update-api-spec/SKILL.md)
+- Timestamp: [docs/api/META.json](../../docs/api/META.json) → `fetched_at`
+
+## Skills
+
+- **API spec sync:** [update-api-spec](../skills/update-api-spec/SKILL.md)
+- **Local setup:** [local-dev](../skills/local-dev/SKILL.md)
+- **Release:** [ship-release](../skills/ship-release/SKILL.md)
+
+## Before claiming done
+
+- [ ] `python -m py_compile wincher_mcp_server.py` (if Python changed)
+- [ ] Topic rules respected for files you touched
+- [ ] No secrets in diff

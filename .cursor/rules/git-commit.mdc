@@ -1,0 +1,59 @@
+---
+description: Use when staging, committing, or preparing git history in wincher-mcp.
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# Git commits (wincher-mcp)
+
+## When to commit
+
+- Commit **only when the user explicitly asks**. If unclear, ask first.
+- Do **not** push, tag, or create GitHub releases unless the user asked for that step.
+
+## Before committing
+
+Run in parallel:
+
+```bash
+git status
+git diff
+git diff --staged
+git log -5 --oneline
+```
+
+- Stage only relevant files. Never commit secrets (`.env`, API keys in config snippets).
+- One logical change per commit; message focuses on **why** (1–2 sentences).
+- Pass the message via HEREDOC:
+
+```bash
+git commit -m "$(cat <<'EOF'
+docs: add Cursor agent rules for the Python MCP fork
+
+EOF
+)"
+```
+
+## Safety
+
+- Never update `git config`.
+- Never use interactive git (`-i`: no `git rebase -i`, `git add -i`).
+- No `--no-verify` unless the user explicitly requests it.
+- No force push to `main`. Warn before any force push elsewhere.
+- Prefer a new commit over `--amend` unless user amend rules apply.
+- Run `python -m py_compile wincher_mcp_server.py` before commits that touch Python.
+- Releases: [releasing.mdc](releasing.mdc) and [ship-release skill](../skills/ship-release/SKILL.md).
+
+## Upstream sync
+
+- `upstream` = `chris-tutt/wincher-mcp-server`, `origin` = `vmandic/wincher-mcp`.
+- When merging upstream, preserve fork-specific `.cursor/` and `AGENTS.md` unless intentionally aligned.
+
+## Red flags
+
+| Stop | Why |
+|------|-----|
+| Commit without user request | Owner policy |
+| `git push --force` to `main` | Destructive |
+| Commit `.env` or real API keys | Secret leak |

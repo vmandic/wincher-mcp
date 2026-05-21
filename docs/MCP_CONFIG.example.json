@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "wincher": {
+      "command": "/ABSOLUTE/PATH/TO/.venv/bin/python",
+      "args": [
+        "/ABSOLUTE/PATH/TO/wincher-mcp/wincher_mcp_server.py"
+      ],
+      "env": {
+        "WINCHER_API_KEY": "YOUR_KEY_HERE"
+      }
+    },
+    "wincher-staging": {
+      "command": "/ABSOLUTE/PATH/TO/.venv/bin/python",
+      "args": [
+        "/ABSOLUTE/PATH/TO/wincher-mcp/wincher_mcp_server.py",
+        "--use-staging"
+      ],
+      "env": {
+        "WINCHER_API_KEY": "YOUR_KEY_HERE"
+      }
+    }
+  }
+}

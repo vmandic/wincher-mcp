@@ -1,0 +1,48 @@
+---
+description: Use when editing Python in wincher-mcp (MCP tools, httpx, stdio, response formatting).
+globs:
+  - wincher_mcp_server.py
+  - "**/*.py"
+alwaysApply: false
+---
+
+# Coding guidelines
+
+## Python
+
+- Target **Python 3.10+**. Match existing style: `async`/`await`, type hints on new helpers.
+- Keep the server **stdlib + declared deps only** (`mcp`, `httpx`) unless the user approves new packages.
+- Prefer small, focused edits in `wincher_mcp_server.py` until a package split is requested.
+
+## MCP stdio
+
+- Transport is **stdio only**. Do not add `print()` to stdout (breaks JSON-RPC).
+- Operator/debug output: **`sys.stderr`** or logging to stderr if you add a logger.
+- Tool results: **`TextContent(type="text", ...)`** with human-readable plain text (current pattern).
+
+## Tool definitions
+
+- Register tools in **`list_tools()`** with accurate `inputSchema` and `required` fields.
+- Implement handlers in **`call_tool()`** with matching `name` branches.
+- Descriptions should say what data returns and which IDs come from other tools (e.g. `website_id` from `get_websites`).
+
+## HTTP client
+
+- Use **`wincher_request()`** / **`make_wincher_request()`** for all API calls (shared auth, base URL, timeout).
+- **`base_url()`** uses production unless MCP args include `--use-staging`; then `WINCHER_STAGING_API_HOST`. Never assign a staging host literal in source.
+- Use **`timeout=30.0`** consistently. On **`httpx.HTTPStatusError`**, use **`_format_http_error()`** (endpoint + truncated body; no full request URL).
+
+## Formatting output
+
+- Use `.get('field', 'N/A')` for optional JSON fields (existing pattern).
+- Truncate long strings in listings (e.g. SERP titles) to keep responses usable in chat.
+- Return **`Unknown tool: {name}`** for unrecognized tool names.
+
+## Red flags
+
+| Stop | Why |
+|------|-----|
+| `print()` to stdout | Breaks MCP |
+| Hardcoded API keys | Secret leak |
+| New dependency without ask | Supply-chain / scope |
+| Breaking tool names without migration note | Breaks Claude configs |

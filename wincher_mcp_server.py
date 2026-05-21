@@ -1,5 +1,9 @@
 import os
+import sys
+import ipaddress
 import asyncio
+from urllib.parse import urlparse
+
 import httpx
 from mcp.server import Server
 from mcp.types import Tool, TextContent
@@ -8,29 +12,154 @@ from mcp.server.stdio import stdio_server
 # Initialize the MCP server
 app = Server("wincher-mcp")
 
-# Wincher API configuration
-WINCHER_API_KEY = os.getenv("WINCHER_API_KEY")
-BASE_URL = "https://api.wincher.com"
+# Production API host (public). Staging host is never stored in source; see WINCHER_STAGING_API_HOST.
+PRODUCTION_BASE_URL = "https://api.wincher.com"
 
-async def make_wincher_request(endpoint: str, params: dict = None):
-    """Make an authenticated request to Wincher API"""
-    if not WINCHER_API_KEY:
-        raise ValueError("WINCHER_API_KEY environment variable not set")
-    
-    headers = {
-        "Authorization": f"Bearer {WINCHER_API_KEY}",
-        "Accept": "application/json"
+# Limits aligned with Wincher API docs / OpenAPI (rate limit 5000 req/hour; bulk maxItems in spec).
+MAX_BULK_KEYWORD_IDS = 1000
+MAX_FORMAT_ROWS = 500
+HTTP_TIMEOUT_SECONDS = 30.0
+
+_BLOCKED_STAGING_HOSTS = frozenset(
+    {
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+        "::1",
+        "169.254.169.254",
+        "metadata.google.internal",
     }
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            f"{BASE_URL}{endpoint}",
-            headers=headers,
+)
+
+# MCP registration only (add "--use-staging" to the server args array). Not an environment variable.
+_USE_STAGING = "--use-staging" in sys.argv
+
+
+def use_staging_enabled() -> bool:
+    return _USE_STAGING
+
+
+def _api_key() -> str:
+    key = os.getenv("WINCHER_API_KEY")
+    if not key:
+        raise ValueError("WINCHER_API_KEY environment variable not set")
+    return key
+
+
+def _validate_api_base_url(url: str, *, staging: bool) -> str:
+    """Reject non-HTTPS and unsafe staging targets (SSRF hardening)."""
+    parsed = urlparse(url.strip())
+    if parsed.scheme != "https":
+        raise ValueError("API base URL must use HTTPS")
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError("API base URL is invalid")
+    if staging:
+        if hostname.lower() in _BLOCKED_STAGING_HOSTS:
+            raise ValueError("Staging API host is not allowed")
+        try:
+            addr = ipaddress.ip_address(hostname)
+        except ValueError:
+            pass
+        else:
+            if (
+                addr.is_private
+                or addr.is_loopback
+                or addr.is_link_local
+                or addr.is_reserved
+            ):
+                raise ValueError("Staging API host is not allowed")
+    port = f":{parsed.port}" if parsed.port else ""
+    return f"https://{hostname}{port}{parsed.path or ''}".rstrip("/")
+
+
+def base_url() -> str:
+    if use_staging_enabled():
+        host = (os.getenv("WINCHER_STAGING_API_HOST") or "").strip()
+        if not host:
+            raise ValueError(
+                "Staging is enabled (--use-staging in MCP args) but WINCHER_STAGING_API_HOST is not set"
+            )
+        return _validate_api_base_url(host, staging=True)
+    return _validate_api_base_url(PRODUCTION_BASE_URL, staging=False)
+
+
+def _positive_int(name: str, value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{name} must be an integer")
+    if value <= 0:
+        raise ValueError(f"{name} must be a positive integer")
+    return value
+
+
+def _positive_int_list(name: str, values: object, *, max_items: int) -> list[int]:
+    if not isinstance(values, list):
+        raise ValueError(f"{name} must be an array of integers")
+    if len(values) > max_items:
+        raise ValueError(f"{name} must contain at most {max_items} items")
+    return [_positive_int(name, item) for item in values]
+
+
+def _format_rows(items: list, formatter, *, label: str) -> str:
+    """Cap rows returned to the MCP host to limit context and memory use."""
+    lines: list[str] = []
+    for item in items[:MAX_FORMAT_ROWS]:
+        lines.append(formatter(item))
+    if len(items) > MAX_FORMAT_ROWS:
+        lines.append(
+            f"\n(Showing {MAX_FORMAT_ROWS} of {len(items)} {label}. Narrow filters or use bulk with fewer IDs.)"
+        )
+    return "".join(lines)
+
+
+def _auth_headers(*, json_body: bool = False) -> dict[str, str]:
+    headers = {
+        "Authorization": f"Bearer {_api_key()}",
+        "Accept": "application/json",
+    }
+    if json_body:
+        headers["Content-Type"] = "application/json"
+    return headers
+
+
+def _format_http_error(error: httpx.HTTPStatusError, endpoint: str) -> str:
+    lines = [
+        f"API Error: {error.response.status_code}",
+        f"Endpoint: {endpoint}",
+    ]
+    body = (error.response.text or "").strip()
+    if body:
+        snippet = body if len(body) <= 200 else f"{body[:200]}..."
+        lines.append(f"Message: {snippet}")
+    return "\n".join(lines)
+
+
+async def wincher_request(
+    method: str,
+    endpoint: str,
+    *,
+    params: dict | None = None,
+    json_body: dict | None = None,
+) -> dict:
+    """Authenticated Wincher API request (GET or POST)."""
+    if not endpoint.startswith("/"):
+        endpoint = f"/{endpoint}"
+    url = f"{base_url()}{endpoint}"
+    async with httpx.AsyncClient(follow_redirects=False) as client:
+        response = await client.request(
+            method.upper(),
+            url,
+            headers=_auth_headers(json_body=json_body is not None),
             params=params,
-            timeout=30.0
+            json=json_body,
+            timeout=HTTP_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
         return response.json()
+
+
+async def make_wincher_request(endpoint: str, params: dict | None = None) -> dict:
+    return await wincher_request("GET", endpoint, params=params)
 
 @app.list_tools()
 async def list_tools() -> list[Tool]:
@@ -47,7 +176,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="get_keywords",
-            description="Get all keywords for a specific website with their current rankings, search volume, CPC, competition, and difficulty data",
+            description="Get all keywords for a specific website with current rankings, search volume, and related fields returned by the API",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -183,237 +312,251 @@ async def list_tools() -> list[Tool]:
 @app.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     """Handle tool calls to Wincher API"""
-    
+    endpoint = "unknown"
+
     try:
         if name == "get_websites":
-            data = await make_wincher_request("/v1/websites")
-            result = "Tracked Websites:\n\n"
-            
-            for site in data.get("data", []):
-                result += f"ID: {site.get('id', 'N/A')}\n"
-                result += f"Domain: {site.get('domain', 'N/A')}\n"
-                
-                # Search engine is an object
-                search_engine = site.get('search_engine', {})
-                result += f"Search Engine: {search_engine.get('domain', 'N/A')}\n"
-                
-                # Location is an object
-                location = site.get('location', {})
-                result += f"Location: {location.get('name', 'N/A')} ({location.get('code', 'N/A')})\n"
-                
-                result += f"Language: {site.get('language', 'N/A')}\n"
-                result += f"Keywords: {site.get('keyword_count', 0)}\n"
-                result += f"Competitors: {site.get('competitor_count', 0)}\n"
-                result += f"Mobile: {site.get('is_mobile', False)}\n"
-                
-                # Show competitor domains
-                competitors = site.get('competitors', [])
+            endpoint = "/v1/websites"
+            data = await make_wincher_request(endpoint)
+            def format_site(site: dict) -> str:
+                block = (
+                    f"ID: {site.get('id', 'N/A')}\n"
+                    f"Domain: {site.get('domain', 'N/A')}\n"
+                )
+                search_engine = site.get("search_engine", {})
+                block += f"Search Engine: {search_engine.get('domain', 'N/A')}\n"
+                location = site.get("location", {})
+                block += f"Location: {location.get('name', 'N/A')} ({location.get('code', 'N/A')})\n"
+                block += f"Language: {site.get('language', 'N/A')}\n"
+                block += f"Keywords: {site.get('keyword_count', 0)}\n"
+                block += f"Competitors: {site.get('competitor_count', 0)}\n"
+                block += f"Mobile: {site.get('is_mobile', False)}\n"
+                competitors = site.get("competitors", [])
                 if competitors:
-                    comp_domains = [c.get('domain', '') for c in competitors]
-                    result += f"Tracking: {', '.join(comp_domains)}\n"
-                
-                result += "\n"
-            
+                    comp_domains = [c.get("domain", "") for c in competitors]
+                    block += f"Tracking: {', '.join(comp_domains)}\n"
+                return block + "\n"
+
+            result = "Tracked Websites:\n\n" + _format_rows(
+                data.get("data", []), format_site, label="websites"
+            )
             return [TextContent(type="text", text=result)]
         
         elif name == "get_keywords":
-            website_id = arguments["website_id"]
-            data = await make_wincher_request(f"/v1/websites/{website_id}/keywords")
-            
-            result = f"Keywords for Website ID {website_id}:\n\n"
-            for kw in data.get("data", []):
-                result += f"ID: {kw.get('id', 'N/A')}\n"
-                result += f"Keyword: {kw.get('keyword', 'N/A')}\n"
-                result += f"Current Rank: {kw.get('position', 'N/A')}\n"
-                result += f"Previous Rank: {kw.get('previous_position', 'N/A')}\n"
-                result += f"Best Rank: {kw.get('best_position', 'N/A')}\n"
-                result += f"Search Volume: {kw.get('search_volume', 'N/A')}\n"
-                result += f"URL: {kw.get('url', 'N/A')}\n"
-                result += f"Last Updated: {kw.get('updated_at', 'N/A')}\n\n"
-            
+            website_id = _positive_int("website_id", arguments["website_id"])
+            endpoint = f"/v1/websites/{website_id}/keywords"
+            data = await make_wincher_request(endpoint)
+
+            def format_keyword(kw: dict) -> str:
+                return (
+                    f"ID: {kw.get('id', 'N/A')}\n"
+                    f"Keyword: {kw.get('keyword', 'N/A')}\n"
+                    f"Current Rank: {kw.get('position', 'N/A')}\n"
+                    f"Previous Rank: {kw.get('previous_position', 'N/A')}\n"
+                    f"Best Rank: {kw.get('best_position', 'N/A')}\n"
+                    f"Search Volume: {kw.get('search_volume', 'N/A')}\n"
+                    f"URL: {kw.get('url', 'N/A')}\n"
+                    f"Last Updated: {kw.get('updated_at', 'N/A')}\n\n"
+                )
+
+            result = f"Keywords for Website ID {website_id}:\n\n" + _format_rows(
+                data.get("data", []), format_keyword, label="keywords"
+            )
             return [TextContent(type="text", text=result)]
         
         elif name == "get_keyword_rankings":
-            keyword_id = arguments["keyword_id"]
-            website_id = arguments["website_id"]
-            data = await make_wincher_request(f"/v1/websites/{website_id}/keyword/{keyword_id}/ranking-history")
+            keyword_id = _positive_int("keyword_id", arguments["keyword_id"])
+            website_id = _positive_int("website_id", arguments["website_id"])
+            endpoint = f"/v1/websites/{website_id}/keyword/{keyword_id}/ranking-history"
+            data = await make_wincher_request(endpoint)
             
-            result = f"Ranking History for Keyword ID {keyword_id}:\n\n"
-            for series in data.get("data", []):
+            def format_series(series: dict) -> str:
+                block = ""
                 if series.get("label"):
-                    result += f"Series: {series['label']}\n"
-                for point in series.get("data", []):
-                    result += f"Date: {point.get('date', 'N/A')}\n"
-                    result += f"Position: {point.get('position', 'N/A')}\n"
-                    if point.get('url'):
-                        result += f"URL: {point['url']}\n"
-                    result += "\n"
-            
+                    block += f"Series: {series['label']}\n"
+                for point in series.get("data", [])[:MAX_FORMAT_ROWS]:
+                    block += f"Date: {point.get('date', 'N/A')}\n"
+                    block += f"Position: {point.get('position', 'N/A')}\n"
+                    if point.get("url"):
+                        block += f"URL: {point['url']}\n"
+                    block += "\n"
+                return block
+
+            result = f"Ranking History for Keyword ID {keyword_id}:\n\n" + _format_rows(
+                data.get("data", []), format_series, label="series"
+            )
             return [TextContent(type="text", text=result)]
         
         elif name == "get_competitor_ranking_summaries":
-            website_id = arguments["website_id"]
-            data = await make_wincher_request(f"/v1/websites/{website_id}/competitors/ranking-summaries")
+            website_id = _positive_int("website_id", arguments["website_id"])
+            endpoint = f"/v1/websites/{website_id}/competitors/ranking-summaries"
+            data = await make_wincher_request(endpoint)
             
-            result = f"Competitor Ranking Comparison:\n\n"
-            for summary in data.get("data", []):
-                result += f"Domain: {summary.get('domain', 'N/A')}\n"
-                result += f"Is Your Website: {summary.get('is_tracked_website', False)}\n"
-                
-                ranking = summary.get('ranking', {})
-                avg_pos = ranking.get('avg_position', {})
-                result += f"Average Position: {avg_pos.get('value', 'N/A')}\n"
-                result += f"Position Change: {avg_pos.get('change', 'N/A')}\n"
-                
-                traffic = ranking.get('traffic', {})
-                result += f"Estimated Traffic: {traffic.get('value', 'N/A')}\n"
-                
-                sov = ranking.get('share_of_voice', {})
-                result += f"Share of Voice: {sov.get('value', 'N/A')}%\n"
-                
-                volume = ranking.get('volume', {})
-                result += f"Total Search Volume: {volume.get('value', 'N/A')}\n"
-                
-                result += "\n"
-            
+            def format_summary(summary: dict) -> str:
+                ranking = summary.get("ranking", {})
+                avg_pos = ranking.get("avg_position", {})
+                traffic = ranking.get("traffic", {})
+                sov = ranking.get("share_of_voice", {})
+                volume = ranking.get("volume", {})
+                return (
+                    f"Domain: {summary.get('domain', 'N/A')}\n"
+                    f"Is Your Website: {summary.get('is_tracked_website', False)}\n"
+                    f"Average Position: {avg_pos.get('value', 'N/A')}\n"
+                    f"Position Change: {avg_pos.get('change', 'N/A')}\n"
+                    f"Estimated Traffic: {traffic.get('value', 'N/A')}\n"
+                    f"Share of Voice: {sov.get('value', 'N/A')}%\n"
+                    f"Total Search Volume: {volume.get('value', 'N/A')}\n\n"
+                )
+
+            result = "Competitor Ranking Comparison:\n\n" + _format_rows(
+                data.get("data", []), format_summary, label="summaries"
+            )
             return [TextContent(type="text", text=result)]
         
         elif name == "get_competitor_keyword_positions":
-            website_id = arguments["website_id"]
-            data = await make_wincher_request(f"/v1/websites/{website_id}/competitors/keyword-positions")
+            website_id = _positive_int("website_id", arguments["website_id"])
+            endpoint = f"/v1/websites/{website_id}/competitors/keyword-positions"
+            data = await make_wincher_request(endpoint)
             
-            result = f"Keyword Position Comparison:\n\n"
-            for item in data.get("data", []):
-                result += f"Keyword: {item.get('keyword', 'N/A')}\n"
-                result += f"Search Volume: {item.get('volume', 'N/A')}\n"
-                
-                positions = item.get('positions', [])
-                for pos in positions:
-                    result += f"  • {pos.get('domain', 'N/A')}: Position {pos.get('position', 'N/A')}"
-                    if pos.get('is_tracked_website'):
-                        result += " (YOUR SITE)"
-                    result += "\n"
-                result += "\n"
-            
+            def format_position_row(item: dict) -> str:
+                block = (
+                    f"Keyword: {item.get('keyword', 'N/A')}\n"
+                    f"Search Volume: {item.get('volume', 'N/A')}\n"
+                )
+                for pos in item.get("positions", []):
+                    line = f"  • {pos.get('domain', 'N/A')}: Position {pos.get('position', 'N/A')}"
+                    if pos.get("is_tracked_website"):
+                        line += " (YOUR SITE)"
+                    block += line + "\n"
+                return block + "\n"
+
+            result = "Keyword Position Comparison:\n\n" + _format_rows(
+                data.get("data", []), format_position_row, label="keywords"
+            )
             return [TextContent(type="text", text=result)]
         
         elif name == "get_serps":
-            keyword_id = arguments["keyword_id"]
-            website_id = arguments["website_id"]
-            data = await make_wincher_request(f"/v1/websites/{website_id}/keywords/{keyword_id}/serps")
+            keyword_id = _positive_int("keyword_id", arguments["keyword_id"])
+            website_id = _positive_int("website_id", arguments["website_id"])
+            endpoint = f"/v1/websites/{website_id}/keywords/{keyword_id}/serps"
+            data = await make_wincher_request(endpoint)
             
-            result = f"SERP Data for Keyword ID {keyword_id}:\n\n"
-            for serp in data.get("data", []):
-                result += f"Date: {serp.get('date', 'N/A')}\n"
-                result += f"Search Volume: {serp.get('volume', {}).get('value', 'N/A')}\n"
-                
-                # SERP features
-                features = serp.get('features', [])
+            def format_serp(serp: dict) -> str:
+                block = (
+                    f"Date: {serp.get('date', 'N/A')}\n"
+                    f"Search Volume: {serp.get('volume', {}).get('value', 'N/A')}\n"
+                )
+                features = serp.get("features", [])
                 if features:
-                    result += f"SERP Features: {', '.join(features)}\n"
-                
-                # Top ranking results
-                results = serp.get('results', [])
-                result += "\nTop Rankings:\n"
-                for i, res in enumerate(results[:10], 1):
-                    result += f"{i}. {res.get('domain', 'N/A')}\n"
-                    result += f"   Title: {res.get('title', 'N/A')[:80]}...\n"
-                    if res.get('url'):
-                        result += f"   URL: {res['url']}\n"
-                result += "\n"
-            
+                    block += f"SERP Features: {', '.join(features)}\n"
+                block += "\nTop Rankings:\n"
+                for i, res in enumerate(serp.get("results", [])[:10], 1):
+                    block += f"{i}. {res.get('domain', 'N/A')}\n"
+                    block += f"   Title: {res.get('title', 'N/A')[:80]}...\n"
+                    if res.get("url"):
+                        block += f"   URL: {res['url']}\n"
+                return block + "\n"
+
+            result = f"SERP Data for Keyword ID {keyword_id}:\n\n" + _format_rows(
+                data.get("data", []), format_serp, label="SERP snapshots"
+            )
             return [TextContent(type="text", text=result)]
         
         elif name == "get_keyword_groups":
-            website_id = arguments["website_id"]
-            data = await make_wincher_request(f"/v1/websites/{website_id}/groups")
+            website_id = _positive_int("website_id", arguments["website_id"])
+            endpoint = f"/v1/websites/{website_id}/groups"
+            data = await make_wincher_request(endpoint)
             
-            result = f"Keyword Groups:\n\n"
-            for group in data.get("data", []):
-                result += f"Group: {group.get('name', 'N/A')}\n"
-                result += f"Keywords: {len(group.get('keyword_ids', []))}\n"
-                
-                ranking = group.get('ranking', {})
-                avg_pos = ranking.get('avg_position', {})
-                result += f"Average Position: {avg_pos.get('value', 'N/A')}\n"
-                
-                traffic = ranking.get('traffic', {})
-                result += f"Estimated Traffic: {traffic.get('value', 'N/A')}\n"
-                
-                volume = ranking.get('volume', {})
-                result += f"Total Search Volume: {volume.get('value', 'N/A')}\n"
-                
-                result += f"Average Difficulty: {group.get('avg_keyword_difficulty', 'N/A')}\n"
-                result += "\n"
-            
+            def format_group(group: dict) -> str:
+                ranking = group.get("ranking", {})
+                avg_pos = ranking.get("avg_position", {})
+                traffic = ranking.get("traffic", {})
+                volume = ranking.get("volume", {})
+                return (
+                    f"Group: {group.get('name', 'N/A')}\n"
+                    f"Keywords: {len(group.get('keyword_ids', []))}\n"
+                    f"Average Position: {avg_pos.get('value', 'N/A')}\n"
+                    f"Estimated Traffic: {traffic.get('value', 'N/A')}\n"
+                    f"Total Search Volume: {volume.get('value', 'N/A')}\n"
+                    f"Average Difficulty: {group.get('avg_keyword_difficulty', 'N/A')}\n\n"
+                )
+
+            result = "Keyword Groups:\n\n" + _format_rows(
+                data.get("data", []), format_group, label="groups"
+            )
             return [TextContent(type="text", text=result)]
         
         elif name == "get_bulk_ranking_history":
-            website_id = arguments["website_id"]
-            keyword_ids = arguments["keyword_ids"]
+            website_id = _positive_int("website_id", arguments["website_id"])
+            keyword_ids = _positive_int_list(
+                "keyword_ids",
+                arguments["keyword_ids"],
+                max_items=MAX_BULK_KEYWORD_IDS,
+            )
             start_at = arguments["start_at"]
             end_at = arguments["end_at"]
+            if not isinstance(start_at, str) or not isinstance(end_at, str):
+                raise ValueError("start_at and end_at must be ISO-8601 date strings")
             
             payload = {
                 "keyword_ids": keyword_ids,
                 "start_at": start_at,
                 "end_at": end_at
             }
+
+            endpoint = f"/v1/websites/{website_id}/ranking-history"
+            data = await wincher_request("POST", endpoint, json_body=payload)
             
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    f"{BASE_URL}/v1/websites/{website_id}/ranking-history",
-                    headers={
-                        "Authorization": f"Bearer {WINCHER_API_KEY}",
-                        "Accept": "application/json",
-                        "Content-Type": "application/json"
-                    },
-                    json=payload,
-                    timeout=30.0
+            def format_bulk_item(item: dict) -> str:
+                block = (
+                    f"Keyword ID: {item.get('keyword_id', 'N/A')}\n"
+                    f"Keyword: {item.get('keyword', 'N/A')}\n"
                 )
-                response.raise_for_status()
-                data = response.json()
-            
-            result = f"Bulk Ranking History ({start_at} to {end_at}):\n\n"
-            for item in data.get("data", []):
-                result += f"Keyword ID: {item.get('keyword_id', 'N/A')}\n"
-                result += f"Keyword: {item.get('keyword', 'N/A')}\n"
-                
-                for point in item.get('data', []):
-                    result += f"  {point.get('date', 'N/A')}: Position {point.get('position', 'N/A')}\n"
-                result += "\n"
-            
+                for point in item.get("data", []):
+                    block += (
+                        f"  {point.get('date', 'N/A')}: Position {point.get('position', 'N/A')}\n"
+                    )
+                return block + "\n"
+
+            result = f"Bulk Ranking History ({start_at} to {end_at}):\n\n" + _format_rows(
+                data.get("data", []), format_bulk_item, label="keywords"
+            )
             return [TextContent(type="text", text=result)]
         
         elif name == "get_annotations":
-            website_id = arguments["website_id"]
-            data = await make_wincher_request(f"/v1/websites/{website_id}/annotations")
+            website_id = _positive_int("website_id", arguments["website_id"])
+            endpoint = f"/v1/websites/{website_id}/annotations"
+            data = await make_wincher_request(endpoint)
             
-            result = f"Annotations:\n\n"
-            for annotation in data.get("data", []):
-                result += f"Date: {annotation.get('date', 'N/A')}\n"
-                result += f"Type: {annotation.get('type', 'N/A')}\n"
-                result += f"Description: {annotation.get('description', 'N/A')}\n"
-                
-                author = annotation.get('author', {})
-                if author.get('profile'):
-                    name = f"{author['profile'].get('first_name', '')} {author['profile'].get('last_name', '')}"
-                    result += f"Author: {name.strip()}\n"
-                
-                result += "\n"
-            
+            def format_annotation(annotation: dict) -> str:
+                block = (
+                    f"Date: {annotation.get('date', 'N/A')}\n"
+                    f"Type: {annotation.get('type', 'N/A')}\n"
+                    f"Description: {annotation.get('description', 'N/A')}\n"
+                )
+                author = annotation.get("author", {})
+                if author.get("profile"):
+                    author_name = (
+                        f"{author['profile'].get('first_name', '')} "
+                        f"{author['profile'].get('last_name', '')}"
+                    )
+                    block += f"Author: {author_name.strip()}\n"
+                return block + "\n"
+
+            result = "Annotations:\n\n" + _format_rows(
+                data.get("data", []), format_annotation, label="annotations"
+            )
             return [TextContent(type="text", text=result)]
         
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
     
     except httpx.HTTPStatusError as e:
-        error_details = f"API Error: {e.response.status_code}\n"
-        error_details += f"URL: {e.request.url}\n"
-        error_details += f"Response: {e.response.text}\n"
-        return [TextContent(type="text", text=error_details)]
+        return [TextContent(type="text", text=_format_http_error(e, endpoint))]
+    except ValueError as e:
+        return [TextContent(type="text", text=f"Error: {e}")]
     except Exception as e:
-        return [TextContent(type="text", text=f"Error: {str(e)}\nType: {type(e).__name__}")]
+        return [TextContent(type="text", text=f"Error: {type(e).__name__}")]
 
 async def main():
     """Run the MCP server"""

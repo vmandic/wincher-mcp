@@ -1,0 +1,46 @@
+---
+description: Use when tagging, syncing upstream, or preparing a GitHub release for wincher-mcp.
+globs:
+  - "**/*"
+alwaysApply: false
+---
+
+# Releasing (wincher-mcp)
+
+This fork is **not published to PyPI/npm**. Releases are **git tags + GitHub releases** (and README version notes if you add them).
+
+## Version alignment
+
+| Artifact | Format |
+|----------|--------|
+| Git tag | `v0.1.0` (semver) |
+| GitHub Release | Same tag title |
+| Optional `CHANGELOG.md` section | `## [0.1.0] - YYYY-MM-DD` |
+
+## Pre-release checks
+
+```bash
+python -m py_compile wincher_mcp_server.py
+git status   # clean or only release files
+```
+
+Full workflow: [.cursor/skills/ship-release/SKILL.md](../skills/ship-release/SKILL.md).
+
+## Hard rules
+
+- **Never** tag or `gh release create` without explicit user approval for that version.
+- **Never** force-push `main`.
+- **Never** commit secrets in release notes or attached assets.
+
+## Upstream
+
+- Cherry-pick or merge from `upstream/main` when taking fixes from Chris Tutt’s repo.
+- Mention upstream in release notes when syncing a known upstream version.
+
+## Red flags
+
+| Stop | Why |
+|------|-----|
+| Release from dirty tree | Wrong artifact |
+| Tag without compile check | Broken default branch |
+| Force-push to fix a tag | History damage |

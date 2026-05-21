@@ -1,0 +1,62 @@
+---
+description: Use when verifying changes, adding tests, or before PR/release in wincher-mcp.
+globs:
+  - wincher_mcp_server.py
+  - test/**
+  - requirements.txt
+alwaysApply: false
+---
+
+# Testing
+
+## Automated tests
+
+From repo root:
+
+```bash
+pip install -r requirements.txt -r requirements-dev.txt
+pytest -q
+pip-audit -r requirements.txt -r requirements-dev.txt
+python -m py_compile wincher_mcp_server.py
+```
+
+CI: `.github/workflows/ci.yml` (Python 3.10–3.12). Dependabot: `.github/dependabot.yml`.
+
+Optional import check:
+
+```bash
+python -c "import wincher_mcp_server"
+```
+
+## Manual MCP smoke test
+
+Requires `WINCHER_API_KEY` in the environment (never commit).
+
+1. Start the server the same way Claude Desktop does (stdio), or use an MCP inspector.
+2. Call `get_websites` with `{}` — expect a non-empty or empty formatted list, not an auth error.
+3. If websites exist, call `get_keywords` with a real `website_id`.
+
+Document failures with status code and endpoint, not the raw API key.
+
+## Test layout
+
+- `test/test_security.py` — SSRF URL validation, input limits, output caps, error formatting.
+- `test/test_fetch_openapi.py` — OpenAPI fetch helpers and `META.json` chunk hash field.
+
+## Future: live API integration tests
+
+- Mock httpx so default tests never call Wincher live (already the case).
+- Optional `WINCHER_INTEGRATION=1 pytest -m integration` for manual smoke tests with a real API key.
+
+## When to run
+
+| Change | Action |
+|--------|--------|
+| `wincher_mcp_server.py` | `py_compile` + manual or `pytest` |
+| `requirements.txt` | Reinstall deps + `py_compile` |
+| Docs only | No compile required |
+
+## Reporting
+
+- State what you ran and the outcome. Do not claim tests passed without evidence.
+- If Wincher returns 401/403, treat as config (key/permissions), not as a logic pass.

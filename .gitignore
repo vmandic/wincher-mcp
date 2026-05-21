@@ -211,6 +211,7 @@ __marimo__/
 .env.local
 *.key
 claude_desktop_config.json
+.cursor/mcp.json
 wincher-mcp-env/
 *-mcp-env/
 rankings_export.csv

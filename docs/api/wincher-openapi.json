@@ -1,0 +1,4703 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "v1",
+    "title": "Wincher API",
+    "description": "The Wincher Public API.\n\n# Introduction\n\nOur API is accessed over HTTPS, uses standard HTTP methods and verbs and is\n(mostly) built around RESTful principles. The root endpoint is\n`https://api.wincher.com/v1` and all data is sent and received as\nJSON.\n\n# Authentication\n\nYou authenticate against the API by using a Personal Access Token. You can\ngenerate a key by logging into your account and navigating to \"[Personal\nAccess Tokens](/account/personal-access-tokens)\" in your user settings.\nGenerated tokens can also be revoked from there. The token must be supplied\nvia the `Authorization` header as a `Bearer` token.\n\n# Rate Limiting\n\nThe API may limit requests made to the API. We currently allow 5000 requests\nper hour. If your request is rate limited the API will respond with a `429`\nstatus code.\n\n# Versioning\n\nThe API version is suffixed to the root endpoint. For example, the current\nversion is `v1` and is accessible at `https://api.wincher.com/v1`.\n\n## Backwards compatible changes\n\nWe consider the following changes backwards compatible and should be kept in\nmind when building API clients:\n\n* Adding new API endpoints and resources.\n* Adding optional parameters to existing endpoints/resources.\n* Adding new properties to API responses.\n* Changing the order of properties in API responses.\n* Changing the length of identifiers and the like.\n\nRegardless, these changes are always documented in the change log.\n\n## Change Log\n* 2025-09-18\n  - ���uDFE1 **[important]**: Position tracking is now limited to the top 30 positions instead of 100. This affects the `ranking.position` property in operations like [`List keywords`](#operation/listKeywords). You can [read more about this](https://www.wincher.com/blog/serp-tracking-depth-limited) change in our official blog.\n  - Position distributions 31-100 and 101-101 are no longer returned and are not in use anymore. A new position distribution 31-31 has been introduced to replace them. This affects the `position_distribution` array in the `RankingSummary` model used by operations like [`List competitor ranking summaries`](#operation/listCompetitorRankingSummaries).\n  - Existing segments including the position value filters will be updated to reflect the new position tracking depth.\n* 2025-06-27\n  - ���uDFE1 **[deprecate]**: The `Volume.forecast` property is deprecated. From now on it will always be an empty array.\n* 2025-01-11\n  - ���uDFE1 **[deprecate]**: The properties `tracked_website_ids` and `competitor_to_website_ids` on `SERP.results` are now deprecated and will always be empty. Use `Website.domain` and `Website.competitors` instead.\n* 2025-01-10\n  - Added `seo_score` to `SERPResult` for `listSerps` endpoint.\n* 2024-12-16\n  - ���uDD34 **[breaking]**: The `Quota.limit` and `Quota.remaining` properties are now nullable. A `null` value implies an unlimited quota.\n* 2024-12-19\n   - Added support for `FOUND_ON_WEB` SERP feature.\n* 2024-11-27\n   - Added `competitors` to `Website`. This can replace usages of the `listCompetitors` endpoint. \n* 2024-11-19\n   - Added support for `LOCAL_PACK` SERP feature.\n* 2024-09-25\n  - Add optional `include_serp_features` (default: `true`) query parameter to `getWebsite`, `listWebsites`, `getKeywordGroup`, `listKeywordGroups` and `listCompetitorRankingSummaries`. Setting this to `false` can substantially reduce response time and size when calling these endpoints.\n* 2024-09-05\n  - Add constraints to `KeywordGroup.name` for min and max string length.\n* 2024-08-21\n   - Rename `map_tracking_units` in `Account.limits` to `map_tracking_credits`.\n   - Add new plan feature `map_tracking_credits`.\n* 2024-08-14\n   - Added support for `AI_OVERVIEW` SERP feature.\n* 2024-06-25\n   - Added `start_date` to `UpdateWebsite`.\n   - Added `start_date` to `Website`.\n* 2024-06-10\n   - Added support for `DISCUSSIONS_AND_FORUMS` SERP feature.\n* 2024-05-09\n   - Added new quotas to Account limits\n* 2024-05-01\n   - Added `maxLength: 45` to `Website.display_name` property. Note that this was already the allowed maximum length for the given value that our system would truncate to if the string length was exceeded over 45 characters.\n* 2024-04-24\n   - Added `maxLength: 45` to `Project.name` property. Note that this was already the allowed maximum length for the given value that our system would truncate to if the string length was exceeded over 45 characters.\n* 2024-04-19\n   - Added `map_tracking_units` to `Account.limits`\n* 2024-03-18\n   - Added `forecast` to `Volume`.\n* 2024-02-16\n   - Added `keyword_lookups` to `Account.limits`.\n* 2023-11-08\n   - Added `Keyword.ranking.best_position` that contains the best position ever for the keyword.\n* 2023-10-03\n   - Added `\"NOT IN\"` segment operator support. Currently supported only for `group` field filter type.\n* 2023-07-20\n  - Added `brand_keywords` property of strings array type to the `Website` and `UpdateWebsite` object schema.\n    This value will be obtainable and modifiable with the [`Websites` related APIs](#tag/Websites).\n  - Added `is_branded` segment filter for including only those keywords which are tracked as brand keywords.\n* 2023-07-17\n   - Added `users` limit and usage to `Account`.\n* 2023-07-14\n  - Added `groups_count` segment filter for filtering keywords by the count of assigned groups.\n* 2023-07-05\n  - Added `change_status` to `Keyword.position`.\n* 2023-06-22\n  - Added `pages_count` segment filter for filtering the amount of ranking pages.\n* 2023-03-22\n  - ���uDFE1 **[deprecate]** CPC `value` properties `cpc.value` and `cpc.history[0].value` are deprecated for keyword response models in operations: [`listKeywords`](#operation/listKeywords), [`createKeyword`](#operation/createKeyword), [`getKeyword`](#operation/getKeyword), [`updateKeyword`](#operation/updateKeyword), [`createKeywordsBulk`](#operation/createKeywordsBulk) and [`updateKeywordsBulk`](#operation/updateKeywordsBulk).\n    - There is a new sibling property `high_value` which should be favored and will present the same value as `value` property.\n    - The `value` properties will stop working after 2023-12-31.\n  - New optional query parameter `include_ranking=true` (default: `true`) for operation [`getKeyword`](#operation/getKeyword) which if not provided or is specified as `true` will ensure that a value is provided for the `ranking` property (which is the current default behavior for this endpoint).\n  - Adds `data.volume` and `data.results[].traffic` to response model of operation [`listSerps`](#operation/listSerps).\n* 2023-01-10\n  - Added optional query params `segment_start_at` and `segment_end_at` to endpoints using `segment_id` in order to specify which date to be used in segment filtering. They will default to `start_at` and `end_at`.\n* 2022-12-16\n  - Added `share_of_voice` and `volume` to `RankingSummary` and related APIs.\n* 2022-11-11\n  - Added `preferred_url` to `Keyword` and related APIs.\n* 2022-10-19\n  - Added `owned_serp_feature` filter type.\n* 2022-09-22\n  - Added keyword count history to `Website`.\n* 2022-09-22\n  - Added ranking pages count history to `RankingSummary`.\n* 2022-09-22\n  - Added SERP feature count history to `RankingSummary`.\n* 2022-09-22\n  - Added traffic value to `RankingSummary`.\n* 2022-09-22\n  - Added competition level to `Keyword`.\n* 2022-09-16\n  - Added two new competitor ranking data endpoints: [`GET /websites/{website_id}/competitors/ranking-summaries`](#operation/listCompetitorRankingSummaries) and [`GET /websites/{website_id}/competitors/keyword-positions`](#operation/listCompetitorKeywordPositions).\n* 2022-06-19\n  - ���uDFE1 **[deprecate]**: `POST /websites/{website_id}/ranking-summary`, will stop working after 2022-12-31.\n* 2022-06-19\n  - Add pagination support via `limit` and `offset` parameters.\n* 2022-06-19\n  - Add Segments endpoints and support filtering of data via the `segment_id` parameter.\n* 2022-04-19\n  - ���uDFE1 **[deprecate]**: `POST /websites/{website_id}/competitors/rankings`, will stop working after 2022-12-31.\n* 2022-02-01\n  - ���uDD34 **[breaking]**: Added `display_name` property to `Website` and `UpdateWebsite`.\n* 2021-11-02\n  - ���uDD34 **[breaking]**: Removed `type` from `Account`.\n* 2021-09-14\n  - Added `ranking_updated_at` property to `Keyword`.\n* 2021-08-04\n  - ���uDD34 **[breaking]**: `position`, `traffic`, `volume` and `cpc` objects can now be null if there is no data and their subproperties are now not nullable.\n\n# Data types\n\n## Formats\n\n* Countries are always `ISO-3166-1 alpha-2` codes, for example `SE`.\n* Languages are always `ISO-639-1` codes, for example `sv`.\n* Currency is always `ISO-4217` codes, for example: `EUR`.\n* Dates are always formatted according to `ISO-8601`, for example `2021-05-09`.\n* Date-times are always formatted according to `ISO-8601` with UTC as the time zone, for example `2021-05-09T00:00:00Z`.\n\n## Collections\nCollections are *always* returned as an object with a `data` field\ncontaining the items. This also holds true for bulk creates/updates.\n"
+  },
+  "servers": [
+    {
+      "description": "Production",
+      "url": "https://api.wincher.com/v1"
+    }
+  ],
+  "x-tagGroups": [
+    {
+      "name": "Account and User",
+      "tags": [
+        "User",
+        "Account"
+      ]
+    },
+    {
+      "name": "Websites and Keywords",
+      "tags": [
+        "Search Engines",
+        "Locations",
+        "Projects",
+        "Segments",
+        "Websites",
+        "Keywords",
+        "Keyword Groups",
+        "SERP",
+        "Competitors",
+        "Annotations"
+      ]
+    }
+  ],
+  "tags": [
+    {
+      "name": "User",
+      "description": "Endpoint to get information about the currently authenticated user."
+    },
+    {
+      "name": "Account",
+      "description": "Endpoint to get account information for the currently authenticated user."
+    },
+    {
+      "name": "Search Engines",
+      "description": "Endpoint to get search engines used as input by various other endpoints."
+    },
+    {
+      "name": "Locations",
+      "description": "Endpoint to get locations used as input by various other endpoints."
+    },
+    {
+      "name": "Projects",
+      "description": "Endpoints to manage the account‘s projects and get their ranking data."
+    },
+    {
+      "name": "Websites",
+      "description": "Endpoints to manage the account‘s websites and get summarized ranking data for the entire website."
+    },
+    {
+      "name": "Keywords",
+      "description": "Endpoints to manage websites‘ keywords and get their ranking data."
+    },
+    {
+      "name": "Keyword Groups",
+      "description": "Endpoints to manage websites‘ keyword groups and get their ranking data."
+    },
+    {
+      "name": "SERP",
+      "description": "Endpoint to get parsed search engine result pages for keywords."
+    },
+    {
+      "name": "Competitors",
+      "description": "Endpoints to manage websites‘ competitors and get their ranking data."
+    },
+    {
+      "name": "Annotations",
+      "description": "Endpoints to manage websites‘ annotations."
+    },
+    {
+      "name": "Segments",
+      "description": "Endpoints to manage the account‘s segments."
+    }
+  ],
+  "security": [
+    {
+      "PersonalAccessToken": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "PersonalAccessToken": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "responses": {
+      "NotFound": {
+        "description": "Not Found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "NoContent": {
+        "description": "No Content",
+        "content": {
+          "application/json": {
+            "example": null
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Bad Request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Access Denied",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Rate Limited",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "ValidationFailed": {
+        "description": "Validation Failed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "HistoricalData": {
+        "description": "OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TimeSeries"
+                  }
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "property": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "REQUIRED",
+              "INVALID",
+              "DUPLICATE"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Human readable error message."
+          }
+        },
+        "required": [
+          "property",
+          "code",
+          "message"
+        ]
+      },
+      "TimeSeries": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeSeriesDataPoint"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "data"
+        ]
+      },
+      "TimeSeriesDataPoint": {
+        "type": "object",
+        "properties": {
+          "datetime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "value": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "required": [
+          "datetime",
+          "value"
+        ]
+      },
+      "HighLowTimeSeriesDataPoint": {
+        "type": "object",
+        "properties": {
+          "datetime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "value": {
+            "type": "number",
+            "format": "float",
+            "description": "Represents the high value. Should not be used due to deprecation and instead it should be replaced with the sibling property `high_value`.",
+            "deprecated": true
+          },
+          "high_value": {
+            "type": "number",
+            "format": "float"
+          },
+          "low_value": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "required": [
+          "datetime",
+          "value",
+          "high_value",
+          "low_value"
+        ]
+      },
+      "SearchEngine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "domain": {
+            "type": "string",
+            "example": "google.com",
+            "description": "Domain name of the search engine."
+          },
+          "country": {
+            "description": "ISO 3166-1 alpha-2 country code.",
+            "type": "string",
+            "example": "US"
+          },
+          "languages": {
+            "type": "array",
+            "description": "Available language codes for the search engine.",
+            "items": {
+              "type": "string",
+              "example": "en"
+            }
+          },
+          "default_location": {
+            "$ref": "#/components/schemas/Location"
+          }
+        },
+        "required": [
+          "id",
+          "domain",
+          "country",
+          "languages",
+          "default_location"
+        ]
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "Unique identifier for the location."
+          },
+          "name": {
+            "type": "string",
+            "description": "Unique name for location.",
+            "example": "New York,United States"
+          },
+          "country": {
+            "type": "string",
+            "description": "ISO 3166-1 alpha-2 country code.",
+            "example": "US"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "country"
+        ]
+      },
+      "Account": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "description": "When the account was first created."
+          },
+          "limits": {
+            "type": "object",
+            "description": "Account usage and limits.",
+            "readOnly": true,
+            "properties": {
+              "websites": {
+                "type": "object",
+                "description": "Website limits.",
+                "properties": {
+                  "limit": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "The maximum number of websites that can be added to this account (null equals unlimited).",
+                    "example": 5
+                  },
+                  "usage": {
+                    "type": "integer",
+                    "description": "The current number of websites on the account.",
+                    "example": 3
+                  }
+                },
+                "required": [
+                  "limit",
+                  "usage"
+                ]
+              },
+              "users": {
+                "type": "object",
+                "description": "User limits.",
+                "properties": {
+                  "limit": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "The maximum number of users that can be added to this account (null equals unlimited).",
+                    "example": 15
+                  },
+                  "usage": {
+                    "type": "integer",
+                    "description": "The current number of users on the account.",
+                    "example": 5
+                  }
+                },
+                "required": [
+                  "limit",
+                  "usage"
+                ]
+              },
+              "keywords": {
+                "type": "object",
+                "description": "Keyword limits",
+                "properties": {
+                  "limit": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "The maximum number of keywords that can be added to this account (null equals unlimited).",
+                    "example": 1000
+                  },
+                  "usage": {
+                    "type": "integer",
+                    "description": "The current number of keywords on the account.",
+                    "example": 500
+                  }
+                },
+                "required": [
+                  "limit",
+                  "usage"
+                ]
+              },
+              "map_tracking_credits": {
+                "type": "object",
+                "description": "Map tracking credits limit and usage values.",
+                "properties": {
+                  "limit": {
+                    "type": "integer",
+                    "nullable": false,
+                    "description": "The maximum number of local map tracking SERP check credits that can be added to this account.",
+                    "example": 1000
+                  },
+                  "usage": {
+                    "type": "integer",
+                    "nullable": false,
+                    "description": "The current number of SERP check credits.",
+                    "example": 500
+                  }
+                },
+                "required": [
+                  "limit",
+                  "usage"
+                ]
+              },
+              "history_days": {
+                "type": "integer",
+                "description": "The number of days of history this account can view.",
+                "nullable": true,
+                "example": 2000
+              },
+              "keyword_lookups": {
+                "$ref": "#/components/schemas/Quota"
+              },
+              "content_outlines": {
+                "$ref": "#/components/schemas/Quota"
+              },
+              "on_page_seo_checks": {
+                "$ref": "#/components/schemas/Quota"
+              }
+            },
+            "required": [
+              "websites",
+              "users",
+              "keywords",
+              "keyword_lookups",
+              "map_tracking_credits",
+              "history_days",
+              "content_outlines",
+              "on_page_seo_checks"
+            ]
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Account's timezone in IANA format",
+            "example": "Europe/Stockholm"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "state",
+          "state_reason",
+          "created_at",
+          "limits",
+          "timezone",
+          "has_lqd"
+        ]
+      },
+      "Quota": {
+        "type": "object",
+        "description": "A service usage quota including the limit, the current amount of usage, the remaining amount, the quota interval e.g. daily or monthly, and the quota reset date. The `null` value implies an unlimited quota.",
+        "properties": {
+          "limit": {
+            "nullable": true,
+            "type": "integer",
+            "description": "This is the total amount."
+          },
+          "usage": {
+            "type": "integer",
+            "description": "This is the already used amount."
+          },
+          "remaining": {
+            "nullable": true,
+            "type": "integer",
+            "description": "This is the available and remaining amount."
+          },
+          "interval": {
+            "$ref": "#/components/schemas/QuotaIntervalEnum"
+          },
+          "resets_at": {
+            "type": "string",
+            "format": "date",
+            "description": "This is the quota reset date i.e. the whole limit amount will be available again."
+          }
+        },
+        "required": [
+          "limit",
+          "usage",
+          "remaining",
+          "interval",
+          "resets_at"
+        ]
+      },
+      "QuotaIntervalEnum": {
+        "type": "string",
+        "enum": [
+          "DAY",
+          "MONTH"
+        ]
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "x-faker": "internet.email"
+          },
+          "first_name": {
+            "type": "string",
+            "example": "Conor",
+            "x-faker": "name.firstName"
+          },
+          "last_name": {
+            "type": "string",
+            "example": "McGregor",
+            "x-faker": "name.lastName"
+          },
+          "language": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2,
+            "description": "The preferred language code (ISO 639-1) for the user.",
+            "enum": [
+              "sv",
+              "en",
+              "pt",
+              "es"
+            ],
+            "example": "en"
+          },
+          "last_active_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "has_password": {
+            "type": "boolean",
+            "nullable": true,
+            "readOnly": true,
+            "example": true
+          },
+          "avatar_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true,
+            "readOnly": true
+          },
+          "phone_number": {
+            "type": "string",
+            "example": "+46771793336",
+            "description": "An E.164 formatted phone number.",
+            "maxLength": 20
+          },
+          "job_title": {
+            "type": "string",
+            "example": "Software Engineer",
+            "maxLength": 128
+          },
+          "integrations": {
+            "type": "array",
+            "readOnly": true,
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/LoginProvider"
+                },
+                {
+                  "$ref": "#/components/schemas/IntegrationProvider"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "first_name",
+          "last_name",
+          "email",
+          "language",
+          "last_active_at",
+          "has_password",
+          "integrations",
+          "avatar_url",
+          "phone_number",
+          "job_title"
+        ]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACTIVE"
+            ],
+            "readOnly": true,
+            "example": "ACTIVE"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "OWNER",
+              "ADMIN",
+              "MEMBER",
+              "EXTERNAL"
+            ]
+          },
+          "project_ids": {
+            "type": "array",
+            "description": "The projects this user has access to.",
+            "nullable": true,
+            "items": {
+              "type": "integer"
+            },
+            "default": []
+          },
+          "profile": {
+            "$ref": "#/components/schemas/Profile"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "role",
+          "project_ids",
+          "profile"
+        ]
+      },
+      "Website": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "domain": {
+            "type": "string",
+            "example": "example.com",
+            "description": "Website domain name, including subdomain. Domains without a subdomain act as a wildcard when collecting rankings."
+          },
+          "display_name": {
+            "type": "string",
+            "default": "",
+            "example": "My website",
+            "description": "Website display name. If set to an empty string the `domain` will be used instead.",
+            "maxLength": 45
+          },
+          "search_engine": {
+            "$ref": "#/components/schemas/SearchEngine"
+          },
+          "is_mobile": {
+            "type": "boolean"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "language": {
+            "type": "string",
+            "example": "en"
+          },
+          "project_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "ranking": {
+            "nullable": true,
+            "readOnly": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RankingSummary"
+              }
+            ]
+          },
+          "keyword_count": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "The number of keywords this website has."
+          },
+          "keyword_count_history": {
+            "type": "array",
+            "nullable": true,
+            "readOnly": true,
+            "description": "The history for number of tracked keywords during the period.",
+            "items": {
+              "$ref": "#/components/schemas/TimeSeriesDataPoint"
+            }
+          },
+          "keyword_group_count": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "The number of keyword groups this website has."
+          },
+          "competitors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Competitor"
+            }
+          },
+          "competitor_count": {
+            "type": "integer",
+            "readOnly": true,
+            "description": "The number of competitors this website has.",
+            "deprecated": true
+          },
+          "favicon_url": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri",
+            "example": "https://www.wincher.com/favicon-160x160.png",
+            "readOnly": true
+          },
+          "is_online": {
+            "type": "boolean",
+            "nullable": true,
+            "readOnly": true
+          },
+          "last_online_check_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "readOnly": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "brand_keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": false,
+            "default": [],
+            "example": [
+              "rank tracker",
+              "google rank tracking software"
+            ],
+            "description": "A strings only array of unique keywords important for the brand related to this website."
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "The date SEO work began for the website. Is used when selecting the \"Since start\" date period in reports.",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "domain",
+          "display_name",
+          "search_engine",
+          "location",
+          "language",
+          "is_mobile",
+          "project_ids",
+          "ranking",
+          "keyword_count",
+          "competitors",
+          "competitor_count",
+          "favicon_url",
+          "created_at",
+          "start_date"
+        ]
+      },
+      "UpdateWebsite": {
+        "type": "object",
+        "properties": {
+          "project_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "display_name": {
+            "type": "string",
+            "default": "",
+            "example": "My website",
+            "description": "Website display name. If set to an empty string the `domain` will be used instead."
+          },
+          "brand_keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": false,
+            "default": [],
+            "example": [
+              "rank tracker",
+              "google rank tracking software"
+            ],
+            "description": "A strings only array of unique keywords important for the brand related to this website."
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "description": "The date SEO work began for the website. Is used when selecting the \"Since start\" date period in reports."
+          }
+        },
+        "required": [
+          "project_ids",
+          "display_name"
+        ]
+      },
+      "Volume": {
+        "type": "object",
+        "readOnly": true,
+        "nullable": true,
+        "properties": {
+          "value": {
+            "type": "integer",
+            "description": "Last known monthly search volume for the keyword."
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeSeriesDataPoint"
+            }
+          },
+          "forecast": {
+            "type": "array",
+            "deprecated": true,
+            "items": {
+              "$ref": "#/components/schemas/TimeSeriesDataPoint"
+            }
+          }
+        },
+        "required": [
+          "value",
+          "history",
+          "forecast"
+        ]
+      },
+      "Value": {
+        "type": "integer",
+        "description": "The latest value in the period."
+      },
+      "Change": {
+        "type": "integer",
+        "description": "The change in the period."
+      },
+      "DownscaledHistory": {
+        "type": "array",
+        "description": "Historical data. This data is downscaled depending on the\nlength of the chosen period and may not contain every\navailable data point.\n",
+        "items": {
+          "$ref": "#/components/schemas/TimeSeriesDataPoint"
+        }
+      },
+      "Position": {
+        "type": "object",
+        "description": "The best position in the SERP.",
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/Value"
+          },
+          "change": {
+            "$ref": "#/components/schemas/Change"
+          },
+          "change_status": {
+            "description": "The status of this keyword's ranking change during the period.\n\n| Status    | Description                                                                                 |\n|-----------|---------------------------------------------------------------------------------------------|\n| UNCHANGED | The keyword has not changed its ranking during the period.                                  |\n| IMPROVED  | The keyword has improved its ranking during the period.                                     |\n| DECLINED  | The keyword has declined its ranking during the period.                                     |\n| NEW       | The keyword was not ranking in the beginning of the period but is ranking at the end of it. |\n| LOST      | The keyword was ranking in the beginning of the period but is not ranking at the end of it. |\n",
+            "type": "string",
+            "enum": [
+              "UNCHANGED",
+              "IMPROVED",
+              "DECLINED",
+              "NEW",
+              "LOST"
+            ]
+          },
+          "history": {
+            "$ref": "#/components/schemas/DownscaledHistory"
+          }
+        },
+        "required": [
+          "value",
+          "change",
+          "change_status",
+          "history"
+        ]
+      },
+      "BestPosition": {
+        "type": "object",
+        "description": "The all time best position.",
+        "properties": {
+          "position": {
+            "type": "integer"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "is_imported": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "position",
+          "date",
+          "is_imported"
+        ]
+      },
+      "Traffic": {
+        "type": "object",
+        "description": "The estimated number of clicks to the website based on the position.",
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/Value"
+          },
+          "change": {
+            "$ref": "#/components/schemas/Change"
+          },
+          "history": {
+            "$ref": "#/components/schemas/DownscaledHistory"
+          }
+        },
+        "required": [
+          "value",
+          "change",
+          "history"
+        ]
+      },
+      "Keyword": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "keyword": {
+            "type": "string",
+            "x-faker": "lorem.word"
+          },
+          "preferred_url": {
+            "type": "string",
+            "example": "www.preferred-url.com"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KeywordGroupNested"
+            }
+          },
+          "difficulty": {
+            "type": "integer",
+            "nullable": true,
+            "readOnly": true
+          },
+          "search_intents": {
+            "type": "array",
+            "nullable": true,
+            "readOnly": true,
+            "items": {
+              "$ref": "#/components/schemas/SearchIntent"
+            }
+          },
+          "cpc": {
+            "nullable": true,
+            "readOnly": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CPC"
+              }
+            ]
+          },
+          "volume": {
+            "nullable": true,
+            "readOnly": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Volume"
+              }
+            ]
+          },
+          "competition": {
+            "nullable": true,
+            "readOnly": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Competition"
+              }
+            ]
+          },
+          "ranking": {
+            "type": "object",
+            "readOnly": true,
+            "nullable": true,
+            "description": "The latest ranking data during the period. The period is specified\nby using the `start_at` and `end_at` parameters. Will be `null` if\nthe ranking has never been updated for the keyword or if\n`include_ranking` is not set to `true`.\n",
+            "properties": {
+              "position": {
+                "nullable": true,
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Position"
+                  }
+                ]
+              },
+              "traffic": {
+                "nullable": true,
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Traffic"
+                  }
+                ]
+              },
+              "pages": {
+                "type": "array",
+                "description": "The pages that this website is ranking with for, sorted by the\nposition (best first).\n",
+                "items": {
+                  "$ref": "#/components/schemas/KeywordPageSimple"
+                }
+              },
+              "serp_features": {
+                "type": "array",
+                "readOnly": true,
+                "description": "The features included in the latest SERP for the keyword.",
+                "items": {
+                  "readOnly": true,
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SERPFeature"
+                    }
+                  ]
+                }
+              },
+              "best_position": {
+                "nullable": true,
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/BestPosition"
+                  }
+                ]
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "position",
+              "traffic",
+              "pages",
+              "serp_features",
+              "best_position",
+              "updated_at"
+            ]
+          },
+          "ranking_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "nullable": true
+          },
+          "last_manual_refresh_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "keyword",
+          "preferred_url",
+          "groups",
+          "difficulty",
+          "search_intents",
+          "cpc",
+          "volume",
+          "competition",
+          "ranking",
+          "ranking_updated_at",
+          "last_manual_refresh_at",
+          "created_at"
+        ]
+      },
+      "CreateKeyword": {
+        "type": "object",
+        "properties": {
+          "keyword": {
+            "type": "string"
+          },
+          "preferred_url": {
+            "type": "string",
+            "example": "www.preferred-url.com"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WriteKeywordGroupNested"
+            }
+          }
+        },
+        "required": [
+          "keyword",
+          "groups"
+        ]
+      },
+      "UpdateKeyword": {
+        "type": "object",
+        "properties": {
+          "preferred_url": {
+            "type": "string",
+            "example": "www.preferred-url.com"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WriteKeywordGroupNested"
+            }
+          }
+        },
+        "required": [
+          "groups"
+        ]
+      },
+      "BulkUpdateKeyword": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Identifies which Keyword to update."
+          },
+          "preferred_url": {
+            "type": "string",
+            "example": "www.preferred-url.com"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WriteKeywordGroupNested"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "groups"
+        ]
+      },
+      "SeoScore": {
+        "type": "object",
+        "properties": {
+          "score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "result_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "score",
+          "result_url",
+          "updated_at"
+        ]
+      },
+      "KeywordPageSimple": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "position": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "url",
+          "position"
+        ]
+      },
+      "KeywordGroup": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "keyword_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "ranking": {
+            "nullable": true,
+            "readOnly": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RankingSummary"
+              }
+            ]
+          },
+          "avg_keyword_difficulty": {
+            "type": "integer",
+            "nullable": true,
+            "readOnly": true
+          },
+          "search_intent_counts": {
+            "type": "array",
+            "nullable": true,
+            "readOnly": true,
+            "items": {
+              "$ref": "#/components/schemas/SearchIntentCount"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "keyword_ids",
+          "ranking",
+          "avg_keyword_difficulty",
+          "search_intent_counts",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "KeywordGroupNested": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "WriteKeywordGroupNested": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "SERP": {
+        "type": "object",
+        "readOnly": true,
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "volume": {
+            "type": "integer",
+            "nullable": true,
+            "description": "The search volume for the keyword at the time of the SERP."
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "readOnly": true,
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SERPFeature"
+                }
+              ]
+            }
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "readOnly": true,
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/SERPResult"
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "created_at",
+          "volume",
+          "features",
+          "results",
+          "imported_results"
+        ]
+      },
+      "SERPFeatureEnum": {
+        "type": "string",
+        "enum": [
+          "PAID",
+          "FAQ",
+          "IMAGES",
+          "PEOPLE_ALSO_ASK",
+          "SHOPPING",
+          "FEATURED_SNIPPET",
+          "SITE_LINKS",
+          "TOP_STORIES",
+          "RECIPES",
+          "ANSWER_BOX",
+          "DISCUSSIONS_AND_FORUMS",
+          "AI_OVERVIEW",
+          "LOCAL_PACK",
+          "FOUND_ON_WEB"
+        ]
+      },
+      "SERPFeature": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/SERPFeatureEnum"
+          },
+          "position": {
+            "type": "number",
+            "nullable": true
+          },
+          "is_owned": {
+            "type": "boolean",
+            "description": "Whether the feature is owned by the tracked website."
+          }
+        },
+        "required": [
+          "type",
+          "position",
+          "is_owned"
+        ]
+      },
+      "SERPResult": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "tracked_website_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "deprecated": true
+          },
+          "competitor_to_website_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "deprecated": true
+          },
+          "position": {
+            "type": "integer"
+          },
+          "traffic": {
+            "type": "number",
+            "nullable": true,
+            "format": "float",
+            "description": "The estimated number of clicks to the website based on the best position."
+          },
+          "seo_score": {
+            "nullable": true,
+            "$ref": "#/components/schemas/SeoScore"
+          }
+        },
+        "required": [
+          "url",
+          "title",
+          "description",
+          "position",
+          "traffic",
+          "load_speed_ms",
+          "page_strength",
+          "domain_strength",
+          "backlinks",
+          "backlinks_nofollow",
+          "backlinks_spam_score",
+          "referring_domains",
+          "word_count",
+          "seo_score"
+        ]
+      },
+      "Competitor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "domain": {
+            "type": "string",
+            "example": "example.com"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "domain",
+          "created_at"
+        ]
+      },
+      "CompetitorRankingSummary": {
+        "type": "object",
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "ranking": {
+            "nullable": true,
+            "readOnly": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RankingSummary"
+              }
+            ]
+          }
+        },
+        "required": [
+          "domain",
+          "ranking"
+        ]
+      },
+      "CompetitorsKeywordRankings": {
+        "type": "object",
+        "properties": {
+          "keyword": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "keyword": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "keyword"
+            ]
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "domain": {
+                  "type": "string"
+                },
+                "position": {
+                  "type": "integer",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "domain",
+                "position"
+              ]
+            }
+          }
+        },
+        "required": [
+          "keyword",
+          "positions"
+        ]
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "example": "Important Websites",
+            "maxLength": 45
+          },
+          "ranking": {
+            "nullable": true,
+            "readOnly": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RankingSummary"
+              }
+            ]
+          },
+          "website_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "user_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "ranking",
+          "website_ids",
+          "user_ids",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "RankingSummary": {
+        "type": "object",
+        "description": "Aggregated ranking data for the filtered keywords.",
+        "properties": {
+          "avg_position": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "number",
+                "format": "float",
+                "description": "The average position in the SERP."
+              },
+              "change": {
+                "type": "number",
+                "format": "float",
+                "nullable": true,
+                "description": "The change of the average position in the period."
+              },
+              "history": {
+                "type": "array",
+                "nullable": true,
+                "description": "The average position history during the period.",
+                "items": {
+                  "$ref": "#/components/schemas/TimeSeriesDataPoint"
+                }
+              }
+            },
+            "required": [
+              "value",
+              "change",
+              "history"
+            ]
+          },
+          "traffic": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "integer",
+                "description": "The estimated number of clicks to the website based on the position."
+              },
+              "change": {
+                "type": "integer",
+                "nullable": true,
+                "description": "The change in traffic during the period."
+              },
+              "history": {
+                "type": "array",
+                "nullable": true,
+                "description": "The traffic history during the period.",
+                "items": {
+                  "$ref": "#/components/schemas/TimeSeriesDataPoint"
+                }
+              }
+            },
+            "required": [
+              "value",
+              "change",
+              "history"
+            ]
+          },
+          "traffic_value": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "integer",
+                "description": "The estimated value of clicks to the website based on the position."
+              },
+              "change": {
+                "type": "integer",
+                "nullable": true,
+                "description": "The change in traffic value during the period."
+              },
+              "history": {
+                "type": "array",
+                "nullable": true,
+                "description": "The traffic value history during the period.",
+                "items": {
+                  "$ref": "#/components/schemas/TimeSeriesDataPoint"
+                }
+              }
+            },
+            "required": [
+              "value",
+              "change",
+              "history"
+            ]
+          },
+          "volume": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "value": {
+                "type": "integer",
+                "description": "The total keyword volume."
+              },
+              "change": {
+                "type": "integer",
+                "nullable": true,
+                "description": "The change in total keyword volume."
+              },
+              "history": {
+                "type": "array",
+                "nullable": true,
+                "description": "The total volume history during the period.",
+                "items": {
+                  "$ref": "#/components/schemas/TimeSeriesDataPoint"
+                }
+              }
+            },
+            "required": [
+              "value",
+              "change",
+              "history"
+            ]
+          },
+          "share_of_voice": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "value": {
+                "type": "number",
+                "description": "The estimated share of voice."
+              },
+              "change": {
+                "type": "number",
+                "nullable": true,
+                "description": "The change in share of voice."
+              },
+              "history": {
+                "type": "array",
+                "nullable": true,
+                "description": "The share of voice history during the period.",
+                "items": {
+                  "$ref": "#/components/schemas/TimeSeriesDataPoint"
+                }
+              }
+            },
+            "required": [
+              "value",
+              "change",
+              "history"
+            ]
+          },
+          "positions_gained": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "integer",
+                "nullable": true,
+                "description": "The total number of positions gained during the period."
+              },
+              "history": {
+                "type": "array",
+                "nullable": true,
+                "description": "The history of positions gained during the period.",
+                "items": {
+                  "$ref": "#/components/schemas/TimeSeriesDataPoint"
+                }
+              }
+            },
+            "required": [
+              "value",
+              "history"
+            ]
+          },
+          "positions_lost": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "integer",
+                "nullable": true,
+                "description": "The total number of positions lost during the period."
+              },
+              "history": {
+                "type": "array",
+                "nullable": true,
+                "description": "The history of positions lost during the period.",
+                "items": {
+                  "$ref": "#/components/schemas/TimeSeriesDataPoint"
+                }
+              }
+            },
+            "required": [
+              "value",
+              "history"
+            ]
+          },
+          "position_distribution": {
+            "type": "array",
+            "description": "The current position distribution.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "range_start": {
+                  "type": "integer",
+                  "description": "The start of the position range."
+                },
+                "range_end": {
+                  "type": "integer",
+                  "description": "The end of the position range."
+                },
+                "value": {
+                  "type": "integer"
+                },
+                "change": {
+                  "type": "integer",
+                  "nullable": true,
+                  "description": "The change during the period."
+                },
+                "history": {
+                  "type": "array",
+                  "nullable": true,
+                  "description": "The position distribution history during the period.",
+                  "items": {
+                    "$ref": "#/components/schemas/TimeSeriesDataPoint"
+                  }
+                }
+              },
+              "required": [
+                "range_start",
+                "range_end",
+                "value",
+                "change",
+                "history"
+              ]
+            }
+          },
+          "serp_features": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "$ref": "#/components/schemas/SERPFeatureEnum"
+                },
+                "value": {
+                  "type": "integer",
+                  "description": "The number of keywords with this SERP feature."
+                },
+                "change": {
+                  "type": "integer",
+                  "description": "The change in the number of keywords with this SERP feature during the period."
+                },
+                "history": {
+                  "type": "array",
+                  "description": "The history of number of keywords with this SERP feature during the period.",
+                  "items": {
+                    "$ref": "#/components/schemas/TimeSeriesDataPoint"
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "value",
+                "history"
+              ]
+            }
+          },
+          "ranking_pages": {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "integer",
+                "description": "The number of ranking pages."
+              },
+              "change": {
+                "type": "integer",
+                "description": "The change in the number of ranking pages during the period."
+              },
+              "history": {
+                "type": "array",
+                "description": "The history of the number of ranking pages during the period.",
+                "items": {
+                  "$ref": "#/components/schemas/TimeSeriesDataPoint"
+                }
+              }
+            },
+            "required": [
+              "type",
+              "value",
+              "history"
+            ]
+          }
+        },
+        "required": [
+          "avg_position",
+          "traffic",
+          "traffic_value",
+          "volume",
+          "share_of_voice",
+          "positions_gained",
+          "positions_lost",
+          "position_distribution",
+          "serp_features",
+          "ranking_pages"
+        ]
+      },
+      "Annotation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "readOnly": true
+          },
+          "type": {
+            "type": "string",
+            "readOnly": true,
+            "enum": [
+              "AUTO",
+              "ALERT",
+              "USER"
+            ],
+            "description": "The type of annotation. When creating an annotation `type` must be `USER`."
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "The date this annotation should be shown at."
+          },
+          "description": {
+            "type": "string",
+            "description": "Description for the annotation. This is displayed in the graphs."
+          },
+          "keyword_ids": {
+            "type": "array",
+            "nullable": true,
+            "description": "Keywords this annotation is related to. If null it's treated as a global annotation.",
+            "items": {
+              "type": "number"
+            }
+          },
+          "author": {
+            "nullable": true,
+            "readOnly": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "description",
+          "keywords",
+          "author",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "Competition": {
+        "type": "object",
+        "readOnly": true,
+        "nullable": true,
+        "properties": {
+          "value": {
+            "type": "number",
+            "format": "float",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Last known competition level for the keyword."
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeSeriesDataPoint"
+            }
+          }
+        },
+        "required": [
+          "value",
+          "history"
+        ]
+      },
+      "CPC": {
+        "type": "object",
+        "readOnly": true,
+        "nullable": true,
+        "properties": {
+          "value": {
+            "type": "number",
+            "format": "float",
+            "description": "Last known high CPC (cost per click) value for the keyword. Should not be used due to deprecation and instead should be replaced by using the sibling property `high_value`.",
+            "deprecated": true
+          },
+          "high_value": {
+            "type": "number",
+            "format": "float",
+            "description": "Last known high CPC (cost per click) value for the keyword."
+          },
+          "low_value": {
+            "type": "number",
+            "format": "float",
+            "description": "Last known low CPC (cost per click) value for the keyword."
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HighLowTimeSeriesDataPoint"
+            }
+          }
+        },
+        "required": [
+          "value",
+          "high_value",
+          "low_value",
+          "history"
+        ]
+      },
+      "SearchIntent": {
+        "type": "object",
+        "properties": {
+          "intent": {
+            "type": "string",
+            "enum": [
+              "NAVIGATIONAL",
+              "INFORMATIONAL",
+              "COMMERCIAL",
+              "TRANSACTIONAL"
+            ]
+          },
+          "probability": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "required": [
+          "intent",
+          "probability"
+        ]
+      },
+      "SearchIntentCount": {
+        "type": "object",
+        "properties": {
+          "intent": {
+            "type": "string",
+            "enum": [
+              "NAVIGATIONAL",
+              "INFORMATIONAL",
+              "COMMERCIAL",
+              "TRANSACTIONAL"
+            ]
+          },
+          "count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "intent",
+          "count"
+        ]
+      },
+      "LoginProvider": {
+        "type": "string",
+        "enum": [
+          "google"
+        ]
+      },
+      "IntegrationProvider": {
+        "type": "string",
+        "enum": [
+          "search-console"
+        ]
+      },
+      "Filter": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "keyword",
+              "starred",
+              "group",
+              "groups_count",
+              "position",
+              "position_change",
+              "traffic",
+              "traffic_change",
+              "volume",
+              "cpc",
+              "serp_feature",
+              "owned_serp_feature",
+              "page_path",
+              "page_subdomain",
+              "pages_count",
+              "updated_at",
+              "created_at",
+              "is_branded"
+            ]
+          },
+          "operator": {
+            "type": "string",
+            "description": "\n| Operator | Description                                              |\n|----------|----------------------------------------------------------|\n| =        | Equals                                                   |\n| !=       | Does not equal                                           |\n| <        | Less than                                                |\n| >        | Greater than                                             |\n| <=       | Less than or equals                                      |\n| >=       | Greater than or equals                                   |\n| ~        | Contains                                                 |\n| !~       | Does not contain                                         |\n| ^        | Starts with                                              |\n| !^       | Does not start with                                      |\n| $        | Ends with                                                |\n| !$       | Does not end with                                        |\n| IN       | Is one of (value must be an array of strings or numbers) |\n| NOT IN   | Is none of (value must be an array of strings)           |\n",
+            "enum": [
+              "=",
+              "!=",
+              "<",
+              ">",
+              "<=",
+              ">=",
+              "~",
+              "!~",
+              "^",
+              "!^",
+              "$",
+              "!$",
+              "IN",
+              "NOT IN"
+            ]
+          },
+          "value": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            ]
+          }
+        },
+        "required": [
+          "field",
+          "operator",
+          "value"
+        ]
+      },
+      "FilterArray": {
+        "type": "array",
+        "items": {
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/Filter"
+            },
+            {
+              "$ref": "#/components/schemas/FilterGroup"
+            }
+          ]
+        }
+      },
+      "FilterGroup": {
+        "type": "object",
+        "properties": {
+          "operator": {
+            "type": "string",
+            "enum": [
+              "AND",
+              "OR"
+            ]
+          },
+          "filters": {
+            "$ref": "#/components/schemas/FilterArray"
+          }
+        },
+        "required": [
+          "operator",
+          "filters"
+        ]
+      },
+      "Segment": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SegmentFiltersOnly"
+          }
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "readOnly": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name of the segment. If no name is given the segment is considered temporary."
+          },
+          "website_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "website_id",
+          "created_at",
+          "updated_at",
+          "expires_at"
+        ]
+      },
+      "SegmentFiltersOnly": {
+        "type": "object",
+        "properties": {
+          "filters": {
+            "$ref": "#/components/schemas/FilterArray"
+          }
+        },
+        "required": [
+          "filters"
+        ]
+      },
+      "PaginatedResponseMeta": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "The total number of results."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "The current offset."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "The current limit."
+          }
+        },
+        "required": [
+          "count",
+          "offset",
+          "limit"
+        ]
+      }
+    },
+    "parameters": {
+      "IncludeRanking": {
+        "in": "query",
+        "name": "include_ranking",
+        "schema": {
+          "type": "boolean",
+          "default": false
+        },
+        "description": "If true, will include ranking data in the response. Setting this to `true` substantially increases the response time and size."
+      },
+      "IncludeRankingDefaultTrue": {
+        "in": "query",
+        "name": "include_ranking",
+        "schema": {
+          "type": "boolean",
+          "default": true
+        },
+        "description": "If true, will include ranking data in the response. Setting this to `false` substantially reduces the response time and size."
+      },
+      "IncludeKeywordCountHistory": {
+        "in": "query",
+        "name": "include_keyword_count_history",
+        "schema": {
+          "type": "boolean",
+          "default": false
+        },
+        "description": "If true, will include `keyword_count_history` in the response."
+      },
+      "IncludeSerpFeatures": {
+        "in": "query",
+        "name": "include_serp_features",
+        "schema": {
+          "type": "boolean",
+          "default": true
+        },
+        "description": "If true, will include `serp_features` in the response. Setting this to `false` substantially reduces the response time and size."
+      },
+      "StartAt": {
+        "in": "query",
+        "name": "start_at",
+        "schema": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "description": "The start date and time for the data."
+      },
+      "EndAt": {
+        "in": "query",
+        "name": "end_at",
+        "schema": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "description": "The end date and time for the data."
+      },
+      "SegmentStartAt": {
+        "in": "query",
+        "name": "segment_start_at",
+        "schema": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "description": "The start date and time to check against for the segment filtering."
+      },
+      "SegmentEndAt": {
+        "in": "query",
+        "name": "segment_end_at",
+        "schema": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "description": "The end date and time to check against for the segment filtering."
+      },
+      "WebsiteId": {
+        "in": "path",
+        "name": "website_id",
+        "required": true,
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "KeywordId": {
+        "in": "path",
+        "name": "keyword_id",
+        "required": true,
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "Limit": {
+        "in": "query",
+        "name": "limit",
+        "schema": {
+          "type": "integer",
+          "description": "The maximum number of results to return."
+        }
+      },
+      "Offset": {
+        "in": "query",
+        "name": "offset",
+        "schema": {
+          "type": "number",
+          "description": "Only get results after this offset."
+        }
+      },
+      "SegmentId": {
+        "in": "query",
+        "name": "segment_id",
+        "schema": {
+          "type": "string",
+          "description": "Segment to filter the keywords and ranking data by."
+        }
+      },
+      "OrderBy": {
+        "in": "query",
+        "name": "order_by",
+        "schema": {
+          "type": "string",
+          "description": "The field to order the results by. Prepend with `-` to use descending ordering."
+        }
+      }
+    }
+  },
+  "paths": {
+    "/search-engines": {
+      "get": {
+        "operationId": "listSearchEngines",
+        "summary": "List search engines",
+        "security": [],
+        "tags": [
+          "Search Engines"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SearchEngine"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/locations": {
+      "get": {
+        "operationId": "listLocations",
+        "summary": "List locations",
+        "description": "Lists locations based on a search query or country.",
+        "security": [],
+        "tags": [
+          "Locations"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "description": "Free text search query (minimum 3 characters long).",
+            "schema": {
+              "type": "string",
+              "minLength": 3
+            }
+          },
+          {
+            "in": "query",
+            "name": "country",
+            "description": "Country code to filter the results by.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "maxLength": 100,
+                      "description": "Results in order of popularity.",
+                      "items": {
+                        "$ref": "#/components/schemas/Location"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user": {
+      "get": {
+        "operationId": "getUser",
+        "summary": "Get user",
+        "tags": [
+          "User"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/account": {
+      "get": {
+        "operationId": "getAccount",
+        "summary": "Get account",
+        "tags": [
+          "Account"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/segments": {
+      "get": {
+        "operationId": "listSegments",
+        "summary": "List segments",
+        "tags": [
+          "Segments"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "only_named",
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether or not to only return named segments."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Segment"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createSegment",
+        "summary": "Create segment",
+        "tags": [
+          "Segments"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Segment"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Segment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/segments/{segment_id}": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "segment_id",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getSegment",
+        "summary": "Get segment",
+        "tags": [
+          "Segments"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Segment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateSegment",
+        "summary": "Update segment",
+        "tags": [
+          "Segments"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Segment"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Segment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteSegment",
+        "summary": "Delete segment",
+        "tags": [
+          "Segments"
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/projects": {
+      "get": {
+        "operationId": "listProjects",
+        "summary": "List projects",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrderBy"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeRanking"
+          },
+          {
+            "$ref": "#/components/parameters/StartAt"
+          },
+          {
+            "$ref": "#/components/parameters/EndAt"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponseMeta"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Project"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProject",
+        "summary": "Create project",
+        "tags": [
+          "Projects"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Project"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/projects/{project_id}": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getProject",
+        "summary": "Get project",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IncludeRanking"
+          },
+          {
+            "$ref": "#/components/parameters/StartAt"
+          },
+          {
+            "$ref": "#/components/parameters/EndAt"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateProject",
+        "summary": "Update project",
+        "tags": [
+          "Projects"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Project"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteProject",
+        "summary": "Delete project",
+        "tags": [
+          "Projects"
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites": {
+      "get": {
+        "operationId": "listWebsites",
+        "summary": "List websites",
+        "tags": [
+          "Websites"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrderBy"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeRanking"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeKeywordCountHistory"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeSerpFeatures"
+          },
+          {
+            "$ref": "#/components/parameters/StartAt"
+          },
+          {
+            "$ref": "#/components/parameters/EndAt"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponseMeta"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Website"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createWebsite",
+        "summary": "Create website",
+        "tags": [
+          "Websites"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Website"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        }
+      ],
+      "get": {
+        "operationId": "getWebsite",
+        "summary": "Get website",
+        "tags": [
+          "Websites"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IncludeRanking"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeKeywordCountHistory"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeSerpFeatures"
+          },
+          {
+            "$ref": "#/components/parameters/StartAt"
+          },
+          {
+            "$ref": "#/components/parameters/EndAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentStartAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentEndAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateWebsite",
+        "summary": "Update website",
+        "tags": [
+          "Websites"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWebsite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Website"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteWebsite",
+        "summary": "Delete website",
+        "tags": [
+          "Websites"
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/keywords": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        }
+      ],
+      "get": {
+        "operationId": "listKeywords",
+        "summary": "List keywords",
+        "tags": [
+          "Keywords"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrderBy"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/StartAt"
+          },
+          {
+            "$ref": "#/components/parameters/EndAt"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeRanking"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponseMeta"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Keyword"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createKeyword",
+        "summary": "Create keyword",
+        "tags": [
+          "Keywords"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateKeyword"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Keyword"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/keywords/{keyword_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        },
+        {
+          "$ref": "#/components/parameters/KeywordId"
+        }
+      ],
+      "get": {
+        "operationId": "getKeyword",
+        "summary": "Get keyword",
+        "tags": [
+          "Keywords"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IncludeRankingDefaultTrue"
+          },
+          {
+            "$ref": "#/components/parameters/StartAt"
+          },
+          {
+            "$ref": "#/components/parameters/EndAt"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Keyword"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateKeyword",
+        "summary": "Update keyword",
+        "tags": [
+          "Keywords"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateKeyword"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Keyword"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteKeyword",
+        "summary": "Delete keyword",
+        "tags": [
+          "Keywords"
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/keywords/bulk": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        }
+      ],
+      "post": {
+        "operationId": "createKeywordsBulk",
+        "summary": "Create multiple keywords",
+        "description": "Creates multiple keywords at once. Any invalid or already existing\nkeywords will be ignored and not be created. A maximum of 1000 keywords\ncan be created at once.\n",
+        "tags": [
+          "Keywords"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "maxItems": 1000,
+                "items": {
+                  "$ref": "#/components/schemas/CreateKeyword"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Keyword"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteKeywordsBulk",
+        "summary": "Delete multiple keywords",
+        "description": "Deletes multiple keywords at once. Invalid keywords are silently\nignored. A maximum of 1000 keywords can be deleted at a time.\n",
+        "tags": [
+          "Keywords"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "keyword_ids": {
+                    "type": "array",
+                    "description": "Array of Keyword IDs to delete.",
+                    "maxItems": 1000,
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "required": [
+                  "keyword_ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateKeywordsBulk",
+        "summary": "Update multiple keywords",
+        "description": "Updates multiple keywords at once. Invalid keywords are silently\nignored. A maximum of 1000 keywords can be updated at a time.\n",
+        "tags": [
+          "Keywords"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "description": "Array of Keyword objects to update.",
+                "maxItems": 1000,
+                "items": {
+                  "$ref": "#/components/schemas/BulkUpdateKeyword"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Keyword"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/keywords/{keyword_id}/serps": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        },
+        {
+          "$ref": "#/components/parameters/KeywordId"
+        },
+        {
+          "$ref": "#/components/parameters/StartAt"
+        },
+        {
+          "$ref": "#/components/parameters/EndAt"
+        }
+      ],
+      "get": {
+        "operationId": "listSerps",
+        "summary": "List SERPs",
+        "description": "Lists available SERPs for a keyword. Is limited to returning at most 30 SERPs at a time.",
+        "tags": [
+          "SERP"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SERP"
+                      },
+                      "maxItems": 30
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/groups": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        }
+      ],
+      "get": {
+        "operationId": "listKeywordGroups",
+        "summary": "List keyword groups",
+        "tags": [
+          "Keyword Groups"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrderBy"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeRanking"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeSerpFeatures"
+          },
+          {
+            "$ref": "#/components/parameters/StartAt"
+          },
+          {
+            "$ref": "#/components/parameters/EndAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentStartAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentEndAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponseMeta"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/KeywordGroup"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createKeywordGroup",
+        "summary": "Create keyword group",
+        "tags": [
+          "Keyword Groups"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeywordGroup"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeywordGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/groups/{group_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        },
+        {
+          "in": "path",
+          "name": "group_id",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getKeywordGroup",
+        "summary": "Get keyword group",
+        "tags": [
+          "Keyword Groups"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IncludeRanking"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeSerpFeatures"
+          },
+          {
+            "$ref": "#/components/parameters/StartAt"
+          },
+          {
+            "$ref": "#/components/parameters/EndAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentStartAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentEndAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeywordGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateKeywordGroup",
+        "summary": "Update keyword group",
+        "tags": [
+          "Keyword Groups"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeywordGroup"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeywordGroup"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteKeywordGroup",
+        "summary": "Delete keyword group",
+        "tags": [
+          "Keyword Groups"
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/competitors": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        }
+      ],
+      "get": {
+        "operationId": "listCompetitors",
+        "summary": "List competitors",
+        "tags": [
+          "Competitors"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OrderBy"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponseMeta"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Competitor"
+                          }
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createCompetitor",
+        "summary": "Create competitor",
+        "tags": [
+          "Competitors"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Competitor"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Competitor"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/competitors/{competitor_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        },
+        {
+          "in": "path",
+          "name": "competitor_id",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getCompetitor",
+        "summary": "Get competitor",
+        "tags": [
+          "Competitors"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Competitor"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteCompetitor",
+        "summary": "Delete competitor",
+        "tags": [
+          "Competitors"
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/competitors/ranking-summaries": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        }
+      ],
+      "get": {
+        "operationId": "listCompetitorRankingSummaries",
+        "summary": "List competitor ranking summaries",
+        "description": "List summary data for all competitors and the website itself.",
+        "tags": [
+          "Competitors"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/StartAt"
+          },
+          {
+            "$ref": "#/components/parameters/EndAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentStartAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentEndAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentId"
+          },
+          {
+            "$ref": "#/components/parameters/IncludeSerpFeatures"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CompetitorRankingSummary"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/competitors/keyword-positions": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        }
+      ],
+      "get": {
+        "operationId": "listCompetitorKeywordPositions",
+        "summary": "List competitor keyword positions",
+        "description": "List keyword positions for all competitors and the website itself.",
+        "tags": [
+          "Competitors"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/StartAt"
+          },
+          {
+            "$ref": "#/components/parameters/EndAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentStartAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentEndAt"
+          },
+          {
+            "$ref": "#/components/parameters/SegmentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CompetitorsKeywordRankings"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/annotations": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        }
+      ],
+      "get": {
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/StartAt"
+          },
+          {
+            "$ref": "#/components/parameters/EndAt"
+          }
+        ],
+        "operationId": "listAnnotations",
+        "summary": "List annotations",
+        "tags": [
+          "Annotations"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Annotation"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createAnnotation",
+        "summary": "Create annotation",
+        "tags": [
+          "Annotations"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Annotation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Annotation"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/annotations/{annotation_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        },
+        {
+          "in": "path",
+          "name": "annotation_id",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getAnnotation",
+        "summary": "Get annotation",
+        "tags": [
+          "Annotations"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Annotation"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateAnnotation",
+        "summary": "Update annotation",
+        "tags": [
+          "Annotations"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Annotation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Annotation"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAnnotation",
+        "summary": "Delete annotation",
+        "tags": [
+          "Annotations"
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/components/responses/NoContent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/keyword/{keyword_id}/ranking-history": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        },
+        {
+          "$ref": "#/components/parameters/KeywordId"
+        }
+      ],
+      "get": {
+        "operationId": "getKeywordRankingHistory",
+        "summary": "Get historical rankings for a keyword",
+        "description": "Get historical rankings for the website and keyword.",
+        "tags": [
+          "Keywords"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/StartAt"
+          },
+          {
+            "$ref": "#/components/parameters/EndAt"
+          },
+          {
+            "in": "query",
+            "name": "group_by",
+            "description": "If set, will group the result into multiple series and otherwise return a single serie for the keyword.\n",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "page",
+                "competitor"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "metric",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "position",
+                "traffic"
+              ],
+              "default": "position"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/HistoricalData"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/websites/{website_id}/ranking-history": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/WebsiteId"
+        }
+      ],
+      "post": {
+        "operationId": "getRankingHistory",
+        "summary": "Bulk get historical rankings",
+        "description": "Get historical rankings for the website and the given keywords.",
+        "tags": [
+          "Websites"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "start_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "end_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "keyword_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "required": [
+                  "start_at",
+                  "end_at",
+                  "keyword_ids"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/HistoricalData"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationFailed"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    }
+  }
+}
