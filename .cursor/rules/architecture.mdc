@@ -58,10 +58,10 @@ OpenAPI `paths` in `docs/api/wincher-openapi.json` omit the `/v1` prefix (server
 4. Document in `README.md` tool list and add an example in `docs/EXAMPLES.md` if user-facing.
 5. Manual smoke test with valid `website_id` / `keyword_id` (see [testing](testing.mdc)).
 
-## Fork vs upstream
+## Lineage
 
-- **`upstream`**: `chris-tutt/wincher-mcp-server` — pull selective fixes; avoid overwriting vmandic-specific docs/rules without intent.
-- **`origin`**: `vmandic/wincher-mcp` — default push target for this fork.
+- **`origin`**: `vmandic/wincher-mcp` — canonical repo and default push target.
+- **Early prototype**: `chris-tutt/wincher-mcp-server` — optional selective cherry-picks; do not overwrite vmandic docs/rules without intent.
 
 ## Red flags
 

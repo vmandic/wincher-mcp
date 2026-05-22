@@ -45,10 +45,10 @@ EOF
 - Run `python -m py_compile wincher_mcp_server.py` before commits that touch Python.
 - Releases: [releasing.mdc](releasing.mdc) and [ship-release skill](../skills/ship-release/SKILL.md).
 
-## Upstream sync
+## Lineage
 
-- `upstream` = `chris-tutt/wincher-mcp-server`, `origin` = `vmandic/wincher-mcp`.
-- When merging upstream, preserve fork-specific `.cursor/` and `AGENTS.md` unless intentionally aligned.
+- `origin` = `vmandic/wincher-mcp` (canonical). Early prototype: `chris-tutt/wincher-mcp-server`.
+- When cherry-picking from the prototype, preserve `.cursor/` and `AGENTS.md` unless intentionally aligned.
 
 ## Red flags
 

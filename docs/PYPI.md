@@ -50,7 +50,19 @@ Single source of truth:
 
 Tag releases on git when you publish: `git tag v0.2.0 && git push origin v0.2.0`.
 
-## Dry run (local)
+## Scripted publish (agents and humans)
+
+Prefer the repo script (loads `~/.zsh_secrets`, runs pytest → build → twine → tag → GitHub release):
+
+```bash
+source .venv/bin/activate
+python scripts/publish_pypi.py --dry-run --version X.Y.Z   # bump only
+python scripts/publish_pypi.py --version X.Y.Z             # full publish
+```
+
+Skill for agents: [.cursor/skills/publishing-version-to-pypi/SKILL.md](../.cursor/skills/publishing-version-to-pypi/SKILL.md).
+
+## Dry run (manual)
 
 ```bash
 source .venv/bin/activate

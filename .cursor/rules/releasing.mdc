@@ -7,7 +7,7 @@ alwaysApply: false
 
 # Releasing (wincher-mcp)
 
-This fork is **not published to PyPI/npm**. Releases are **git tags + GitHub releases** (and README version notes if you add them).
+Releases use **git tags + GitHub releases** and **PyPI** (`wincher-mcp`). Prefer `scripts/publish_pypi.py` (see [publishing-version-to-pypi](../skills/publishing-version-to-pypi/SKILL.md)).
 
 ## Version alignment
 
@@ -32,10 +32,9 @@ Full workflow: [.cursor/skills/ship-release/SKILL.md](../skills/ship-release/SKI
 - **Never** force-push `main`.
 - **Never** commit secrets in release notes or attached assets.
 
-## Upstream
+## Lineage
 
-- Cherry-pick or merge from `upstream/main` when taking fixes from Chris Tutt’s repo.
-- Mention upstream in release notes when syncing a known upstream version.
+- Cherry-pick from `chris-tutt/wincher-mcp-server` only when needed; mention in release notes if you do.
 
 ## Red flags
 

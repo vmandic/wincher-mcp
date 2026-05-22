@@ -14,7 +14,7 @@ Connect Cursor, Claude Code, or any MCP client to your tracked websites: keyword
 - **Hardened defaults** — input limits, response caps, safe errors, optional staging host validation
 - **Optional TOON output** — compact [Token-Oriented Object Notation](https://github.com/toon-format/toon) responses to cut LLM token use on large keyword and ranking lists
 
-Maintained fork of [chris-tutt/wincher-mcp-server](https://github.com/chris-tutt/wincher-mcp-server) with agent docs, CI, vendored OpenAPI, and security hardening.
+Canonical open-source Wincher MCP server: PyPI package [`wincher-mcp`](https://pypi.org/project/wincher-mcp/), agent docs, CI, vendored OpenAPI, optional TOON output, and security hardening. Lineage from the early [chris-tutt/wincher-mcp-server](https://github.com/chris-tutt/wincher-mcp-server) prototype; this repo is the maintained home for new work.
 
 ---
 
@@ -33,7 +33,7 @@ Maintained fork of [chris-tutt/wincher-mcp-server](https://github.com/chris-tutt
 - [API reference](#api-reference)
 - [Troubleshooting](#troubleshooting)
 - [Development](#development)
-- [Upstream and license](#upstream-and-license)
+- [Lineage and license](#lineage-and-license)
 
 ---
 
@@ -384,15 +384,16 @@ Dependabot: [.github/dependabot.yml](.github/dependabot.yml) (pip + GitHub Actio
 
 ---
 
-## Upstream and license
+## Lineage and license
 
 | Item | Link |
 |------|------|
-| **This fork** | [github.com/vmandic/wincher-mcp](https://github.com/vmandic/wincher-mcp) |
-| **Upstream** | [github.com/chris-tutt/wincher-mcp-server](https://github.com/chris-tutt/wincher-mcp-server) |
+| **Repository** | [github.com/vmandic/wincher-mcp](https://github.com/vmandic/wincher-mcp) |
+| **PyPI** | [pypi.org/project/wincher-mcp](https://pypi.org/project/wincher-mcp) |
+| **Early prototype** | [github.com/chris-tutt/wincher-mcp-server](https://github.com/chris-tutt/wincher-mcp-server) |
 | **Wincher API** | [wincher.com/docs/api](https://www.wincher.com/docs/api) |
 | **MCP SDK** | [modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk) |
 
-[MIT](LICENSE) — see upstream copyright in LICENSE; fork maintenance by [Vedran Mandić](https://github.com/vmandic) and contributors.
+[MIT](LICENSE) — maintained by [Vedran Mandić](https://github.com/vmandic) and contributors.
 
 Contributions welcome via issues and pull requests. Run `pytest` and `pip-audit` before opening a PR.

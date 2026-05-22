@@ -12,7 +12,7 @@ Conventions are split by topic in [`.cursor/rules/`](.cursor/rules/README.md):
 - **`testing.mdc`** — verification before claiming done (`pytest -q`, `pip-audit`; see CI)
 - **`security.mdc`** — API keys, HTTP, error redaction
 - **`git-commit.mdc`** — commit/push gates
-- **`releasing.mdc`** — tags and GitHub releases (fork maintenance)
+- **`releasing.mdc`** — tags, GitHub releases, and PyPI
 
 Do not duplicate rule content here; update the relevant `.mdc` when conventions change.
 
@@ -34,14 +34,15 @@ Index: [.cursor/skills/README.md](.cursor/skills/README.md).
 | Python | 3.10+ |
 | Deps | `pip install -e ".[dev]"` or PyPI `wincher-mcp` (`mcp`, `httpx`, `python-toon`) |
 | Test | `pytest -q`; audit: `pip-audit` after editable install |
-| PyPI | [docs/PYPI.md](docs/PYPI.md); version in `src/wincher_mcp/__init__.py` |
+| PyPI | [publishing-version-to-pypi](.cursor/skills/publishing-version-to-pypi/SKILL.md) + `scripts/publish_pypi.py`; version in `src/wincher_mcp/__init__.py` |
 | Secret | `WINCHER_API_KEY` (env only; never commit) |
 | Staging | MCP arg `--use-staging` + env `WINCHER_STAGING_API_HOST` (host never in repo) |
 | MCP example | [docs/MCP_CONFIG.example.json](docs/MCP_CONFIG.example.json) |
 | API spec | [docs/api/wincher-openapi.json](docs/api/wincher-openapi.json) (`META.json` has `fetched_at`) |
 | Security report | [security_best_practices_report.md](security_best_practices_report.md) |
-| Upstream | https://github.com/chris-tutt/wincher-mcp-server |
-| Fork | https://github.com/vmandic/wincher-mcp |
+| Repository | https://github.com/vmandic/wincher-mcp |
+| PyPI | https://pypi.org/project/wincher-mcp/ |
+| Early prototype | https://github.com/chris-tutt/wincher-mcp-server |
 | License | MIT |
 
 ## Ask before doing

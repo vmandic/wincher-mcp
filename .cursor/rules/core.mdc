@@ -9,8 +9,8 @@ alwaysApply: true
 
 ## Identity
 
-- Fork of [chris-tutt/wincher-mcp-server](https://github.com/chris-tutt/wincher-mcp-server)
-- Repo: https://github.com/vmandic/wincher-mcp
+- Canonical repo: https://github.com/vmandic/wincher-mcp (PyPI `wincher-mcp`)
+- Lineage: early prototype [chris-tutt/wincher-mcp-server](https://github.com/chris-tutt/wincher-mcp-server); new work lands here
 - Entry: `wincher-mcp` (PyPI) or `python -m wincher_mcp`; shim `wincher_mcp_server.py` — MCP name `wincher-mcp`
 - Production API: `https://api.wincher.com` (Bearer `WINCHER_API_KEY`)
 - Optional staging: MCP arg `--use-staging` + env `WINCHER_STAGING_API_HOST` (host never in repo)

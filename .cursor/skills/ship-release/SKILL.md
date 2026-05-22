@@ -1,14 +1,14 @@
 ---
 name: ship-release
 description: >-
-  Ship a wincher-mcp fork release: verify Python, bump version notes,
+  Ship a wincher-mcp release: verify Python, bump version notes,
   git tag, and GitHub release. Use when the user asks to release,
   tag vX.Y.Z, or create a GitHub release for vmandic/wincher-mcp.
 ---
 
 # Ship release (wincher-mcp)
 
-Conservative workflow for **vmandic/wincher-mcp**. **PyPI:** see [docs/PYPI.md](../../../docs/PYPI.md) (bump `src/wincher_mcp/__init__.py`, `python -m build`, `twine upload`).
+Conservative workflow for **vmandic/wincher-mcp**. **PyPI:** use [publishing-version-to-pypi](../publishing-version-to-pypi/SKILL.md) and `scripts/publish_pypi.py` (not manual twine steps).
 
 ## Hard rules
 
@@ -23,7 +23,7 @@ Confirm with the user:
 
 1. Target semver (`v0.1.1`, etc.).
 2. Whether to push `main` and create the GitHub release in this session.
-3. Whether to note upstream sync from `chris-tutt/wincher-mcp-server` in release notes.
+3. Whether to publish to PyPI via `scripts/publish_pypi.py` (preferred) or tag-only.
 
 Optional: add or update `CHANGELOG.md` (Keep a Changelog style).
 
