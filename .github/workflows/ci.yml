@@ -38,16 +38,24 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
+          pip install -e ".[dev]"
 
-      - name: Compile server
-        run: python -m py_compile wincher_mcp_server.py
+      - name: Compile package
+        run: |
+          python -m py_compile wincher_mcp_server.py
+          python -m compileall -q src/wincher_mcp
 
       - name: Unit tests
         run: pytest -q
 
+      - name: Build wheel (packaging smoke)
+        if: matrix.python-version == '3.12'
+        run: |
+          pip install build
+          python -m build
+
       - name: Dependency audit
-        run: pip-audit -r requirements.txt -r requirements-dev.txt
+        run: pip-audit
 
   api-spec-check:
     name: Wincher OpenAPI drift

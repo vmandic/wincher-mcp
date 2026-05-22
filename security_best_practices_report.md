@@ -104,7 +104,7 @@ None identified for production-only use with trusted MCP config.
 
 - Production API host hardcoded to `https://api.wincher.com`.
 - Staging host not stored in the repository.
-- `.env` and `claude_desktop_config.json` gitignored.
+- `.env` and local MCP config filenames (e.g. `claude_desktop_config.json`) gitignored.
 - HTTP errors omit full request URL (staging host not leaked).
 - API error bodies truncated to 200 characters.
 - Stdio-only MCP (no network listener).

@@ -1,3 +1,6 @@
+# Runtime deps are defined in pyproject.toml. This file is kept for quick clones:
+#   pip install -r requirements.txt
+# Prefer: pip install -e ".[dev]" or: pip install wincher-mcp
 mcp>=1.0.0,<2
 httpx>=0.27.0,<1
 python-toon>=0.1.3,<1

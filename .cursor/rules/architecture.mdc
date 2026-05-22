@@ -13,11 +13,13 @@ alwaysApply: false
 
 | Unit | Role |
 |------|------|
-| `wincher_mcp_server.py` | MCP server, Wincher HTTP client, all tools |
-| `requirements.txt` | `mcp`, `httpx` |
-| `docs/SETUP.md`, `docs/EXAMPLES.md` | Human setup and prompt examples |
+| `src/wincher_mcp/server.py` | MCP server, Wincher HTTP client, all tools |
+| `wincher_mcp_server.py` | Root shim for legacy MCP config paths |
+| `pyproject.toml` | PyPI package `wincher-mcp`, console script |
+| `requirements.txt` | Runtime deps (mirror of `pyproject.toml`) |
+| `docs/SETUP.md`, `docs/EXAMPLES.md`, `docs/PYPI.md` | Setup, prompts, publishing |
 
-No `src/` package yet. Prefer extending the single file until complexity warrants a split (`wincher_mcp/` package with `server.py`, `client.py`, `tools/`).
+Published on PyPI as **`wincher-mcp`**; local dev: `pip install -e ".[dev]"`.
 
 ## Data flow
 

@@ -6,7 +6,7 @@
 [![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-6366f1)](https://modelcontextprotocol.io)
 
 **Read-only [Wincher](https://www.wincher.com) SEO data for AI coding agents.**  
-Connect Cursor, Claude Desktop, or any MCP client to your tracked websites: keyword rankings, competitors, SERPs, and groups, without leaving the editor.
+Connect Cursor, Claude Code, or any MCP client to your tracked websites: keyword rankings, competitors, SERPs, and groups, without leaving the editor.
 
 - **Read-only by design** — GET-style Wincher API usage only; no writes to your account
 - **Stdio MCP** — local process spawned by the client; no HTTP listener
@@ -89,7 +89,7 @@ Paste into **Cursor, Claude Code, or Copilot** and ask the agent to run setup on
 Set up the wincher-mcp MCP server from https://github.com/vmandic/wincher-mcp on this machine end-to-end.
 
 Before you change anything, confirm with me:
-1) Which MCP client I use (Cursor, Claude Code, Claude Desktop, or VS Code Copilot).
+1) Which MCP client I use (Cursor, Claude Code, or VS Code Copilot).
 2) Where to clone the repo (default: ~/source/vmandic/wincher-mcp).
 
 Then:
@@ -148,35 +148,53 @@ Full walkthrough: [docs/SETUP.md](docs/SETUP.md). More prompts: [docs/EXAMPLES.m
 | **Python** | 3.10 or newer (CI tests 3.10–3.12) |
 | **Wincher account** | With API access and tracked sites/keywords |
 | **API token** | Personal Access Token; env var `WINCHER_API_KEY` |
-| **MCP client** | Cursor, Claude Desktop, Claude Code, or any stdio MCP host |
+| **MCP client** | Cursor, Claude Code, or any stdio MCP host |
 
 ---
 
 ## Installation
 
-### From a clone (recommended)
+### From PyPI (recommended)
+
+```bash
+pipx install wincher-mcp
+# or: pip install wincher-mcp
+```
+
+MCP config then uses the console script (no clone path):
+
+```json
+{
+  "mcpServers": {
+    "wincher": {
+      "command": "wincher-mcp",
+      "args": [],
+      "env": { "WINCHER_API_KEY": "YOUR_KEY_HERE" }
+    }
+  }
+}
+```
+
+Find the binary path if needed: `pipx which wincher-mcp`.
+
+Package: [pypi.org/project/wincher-mcp](https://pypi.org/project/wincher-mcp/). **Publishing:** [docs/PYPI.md](docs/PYPI.md).
+
+### From a clone (development)
 
 ```bash
 git clone https://github.com/vmandic/wincher-mcp.git
 cd wincher-mcp
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-python -m py_compile wincher_mcp_server.py
-```
-
-Optional dev tools:
-
-```bash
-pip install -r requirements-dev.txt
+pip install -e ".[dev]"
 pytest -q
 ```
 
-There is **no PyPI package** in this repo today; run from a clone or your own wrapper script (see [Authentication](#authentication)).
+Legacy launcher `wincher_mcp_server.py` at repo root still works for existing MCP JSON paths.
 
 ### Virtual environment name
 
-Use `.venv` (as in CI and examples) or any venv path. Update MCP config paths accordingly.
+Use `.venv` (as in CI) or **pipx** for MCP hosts. Update MCP config `command` accordingly.
 
 ---
 
@@ -222,8 +240,9 @@ Copy [`.env.example`](.env.example) to `.env` for local shell use only; `.env` i
 |--------|-----------------|------------|
 | Cursor | `~/.cursor/mcp.json` or project `.cursor/mcp.json` | `mcpServers` |
 | Claude Code | `~/.claude.json` or project `.mcp.json` | `mcpServers` |
-| Claude Desktop | OS-specific Claude config | `mcpServers` |
 | VS Code Copilot | `.vscode/mcp.json` | `servers` (stdio) |
+
+The Claude desktop app (if you use it) uses `claude_desktop_config.json` on macOS/Windows with the same `mcpServers` shape; see [docs/SETUP.md](docs/SETUP.md).
 
 All examples use **stdio**: the client spawns Python and talks JSON-RPC over stdin/stdout. Logs and errors go to stderr.
 

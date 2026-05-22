@@ -6,8 +6,8 @@ Complete installation instructions for the Wincher MCP Server.
 
 - **Operating System:** macOS, Windows, or Linux
 - **Python:** 3.10 or higher
-- **Claude Desktop:** Latest version ([download here](https://claude.ai/download))
-- **Wincher Account:** With API access enabled
+- **MCP client:** [Cursor](https://cursor.com), [Claude Code](https://docs.anthropic.com/en/docs/claude-code), or another stdio MCP host
+- **Wincher account:** With API access enabled
 
 ## Step-by-Step Installation
 
@@ -109,16 +109,21 @@ Example paths:
 - **macOS:** `/Users/yourname/wincher-mcp-server/wincher-mcp-env/bin/python`
 - **Windows:** `C:\Users\yourname\wincher-mcp-server\wincher-mcp-env\Scripts\python.exe`
 
-### 7. Configure Claude Desktop
+### 7. Configure your MCP client
 
-**Find your config file:**
+Use the same `mcpServers` JSON shape in whichever host you use.
 
-- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+**Config file locations:**
+
+| Client | Where |
+|--------|--------|
+| **Cursor** | `~/.cursor/mcp.json` or `<project>/.cursor/mcp.json` |
+| **Claude Code** | `~/.claude.json` or `<project>/.mcp.json` |
+| **Claude app (desktop)** | macOS: `~/Library/Application Support/Claude/claude_desktop_config.json` — Windows: `%APPDATA%\Claude\claude_desktop_config.json` |
 
 **Edit the file:**
 
-If the file doesn't exist, create it. If it exists and has other MCP servers, add the Wincher configuration to the existing `mcpServers` object.
+If the file doesn't exist, create it. If it already lists other MCP servers, add Wincher to the existing `mcpServers` object.
 
 **New config file:**
 ```json
@@ -166,17 +171,13 @@ See [MCP_CONFIG.example.json](MCP_CONFIG.example.json). For optional staging, ad
 - On Windows, use forward slashes `/` or escaped backslashes `\\` in paths
 - Ensure the JSON is valid (no trailing commas, proper quotes)
 
-### 8. Restart Claude Desktop
+### 8. Restart your MCP client
 
-**Completely quit Claude Desktop:**
-- **macOS:** Cmd+Q or Claude → Quit Claude
-- **Windows:** File → Exit
+Fully quit and reopen **Cursor**, **Claude Code**, or the Claude app so it reloads MCP config.
 
-**Restart the application**
+### 9. Test the connection
 
-### 9. Test the Connection
-
-Open Claude Desktop and try:
+In Cursor or Claude Code, try:
 ```
 "Show me my Wincher websites"
 ```
@@ -207,10 +208,12 @@ python wincher_mcp_server.py
 It should run without errors. Press Ctrl+C to stop.
 
 **Check 3: Verify JSON syntax**
-Use a JSON validator to check your `claude_desktop_config.json`:
+
+Validate the MCP config file for your client:
+
 ```bash
-# macOS/Linux
-python -m json.tool ~/Library/Application\ Support/Claude/claude_desktop_config.json
+python -m json.tool ~/.cursor/mcp.json
+# or: python -m json.tool ~/.claude.json
 ```
 
 ### "API Error: 401 Unauthorized"
@@ -232,7 +235,7 @@ You might not have any websites tracked in Wincher yet.
 2. Add at least one website to track
 3. Add some keywords to that website
 4. Wait a few minutes for initial ranking data
-5. Try again in Claude
+5. Try again in your MCP client
 
 ### Virtual Environment Issues
 
@@ -273,7 +276,8 @@ pip list | grep -E "mcp|httpx"
 curl -H "Authorization: Bearer YOUR_KEY" https://api.wincher.com/v1/websites
 
 # 4. Config file exists and is valid JSON?
-cat ~/Library/Application\ Support/Claude/claude_desktop_config.json | python -m json.tool
+cat ~/.cursor/mcp.json | python -m json.tool
+# or: cat ~/.claude.json | python -m json.tool
 ```
 
 ## Updating
@@ -286,7 +290,7 @@ source wincher-mcp-env/bin/activate  # Activate virtual env
 pip install -r requirements.txt --upgrade
 ```
 
-Restart Claude Desktop after updating.
+Restart your MCP client after updating.
 
 ## Getting Help
 

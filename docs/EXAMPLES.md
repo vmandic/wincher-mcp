@@ -1,6 +1,6 @@
 # Usage Examples
 
-50+ example prompts for using the Wincher MCP Server with Claude Desktop.
+50+ example prompts for using the Wincher MCP Server with Cursor, Claude Code, or other MCP hosts.
 
 ## Getting Started
 

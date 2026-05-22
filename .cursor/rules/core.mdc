@@ -11,7 +11,7 @@ alwaysApply: true
 
 - Fork of [chris-tutt/wincher-mcp-server](https://github.com/chris-tutt/wincher-mcp-server)
 - Repo: https://github.com/vmandic/wincher-mcp
-- Single entry: `wincher_mcp_server.py` — MCP name `wincher-mcp`
+- Entry: `wincher-mcp` (PyPI) or `python -m wincher_mcp`; shim `wincher_mcp_server.py` — MCP name `wincher-mcp`
 - Production API: `https://api.wincher.com` (Bearer `WINCHER_API_KEY`)
 - Optional staging: MCP arg `--use-staging` + env `WINCHER_STAGING_API_HOST` (host never in repo)
 - Nine read-only tools: websites, keywords, rankings, competitors, SERPs, groups, bulk history, annotations
@@ -20,11 +20,11 @@ alwaysApply: true
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt -r requirements-dev.txt
-pytest -q && python -m py_compile wincher_mcp_server.py
+pip install -e ".[dev]"
+pytest -q && python -m compileall -q src/wincher_mcp
 ```
 
-Configure Claude Desktop or Cursor MCP with **absolute paths** to the venv Python and `wincher_mcp_server.py`. See [docs/SETUP.md](../../docs/SETUP.md).
+Configure Cursor or Claude Code MCP (see [docs/SETUP.md](../../docs/SETUP.md)). PyPI install: `command` = `wincher-mcp`; clone/dev: absolute paths or editable install.
 
 ## Where rules live
 

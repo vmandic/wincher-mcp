@@ -32,7 +32,7 @@ python -c "import wincher_mcp_server"
 
 Requires `WINCHER_API_KEY` in the environment (never commit).
 
-1. Start the server the same way Claude Desktop does (stdio), or use an MCP inspector.
+1. Start the server the same way your MCP client does (stdio), or use an MCP inspector.
 2. Call `get_websites` with `{}` — expect a non-empty or empty formatted list, not an auth error.
 3. If websites exist, call `get_keywords` with a real `website_id`.
 

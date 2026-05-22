@@ -22,7 +22,7 @@ Do not duplicate rule content here; update the relevant `.mdc` when conventions 
 |-------|------|
 | [update-api-spec](.cursor/skills/update-api-spec/SKILL.md) | Refresh vendored OpenAPI from wincher.com/docs/api |
 | [ship-release](.cursor/skills/ship-release/SKILL.md) | Version bump, git tag, GitHub release |
-| [local-dev](.cursor/skills/local-dev/SKILL.md) | venv, deps, Claude Desktop MCP config, smoke test |
+| [local-dev](.cursor/skills/local-dev/SKILL.md) | venv, deps, MCP client config (Cursor / Claude Code), smoke test |
 
 Index: [.cursor/skills/README.md](.cursor/skills/README.md).
 
@@ -30,10 +30,11 @@ Index: [.cursor/skills/README.md](.cursor/skills/README.md).
 
 | Item | Value |
 |------|--------|
-| Entry | `wincher_mcp_server.py` (stdio MCP) |
+| Entry | `wincher-mcp` CLI or `python -m wincher_mcp` (stdio MCP); shim `wincher_mcp_server.py` |
 | Python | 3.10+ |
-| Deps | `pip install -r requirements.txt` (`mcp`, `httpx`, `python-toon`); dev: `requirements-dev.txt` |
-| Test | `pytest -q`; audit: `pip-audit -r requirements.txt -r requirements-dev.txt` |
+| Deps | `pip install -e ".[dev]"` or PyPI `wincher-mcp` (`mcp`, `httpx`, `python-toon`) |
+| Test | `pytest -q`; audit: `pip-audit` after editable install |
+| PyPI | [docs/PYPI.md](docs/PYPI.md); version in `src/wincher_mcp/__init__.py` |
 | Secret | `WINCHER_API_KEY` (env only; never commit) |
 | Staging | MCP arg `--use-staging` + env `WINCHER_STAGING_API_HOST` (host never in repo) |
 | MCP example | [docs/MCP_CONFIG.example.json](docs/MCP_CONFIG.example.json) |

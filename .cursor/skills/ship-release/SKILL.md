@@ -8,7 +8,7 @@ description: >-
 
 # Ship release (wincher-mcp)
 
-Conservative workflow for **vmandic/wincher-mcp** only. There is **no npm/PyPI publish** in this repo unless the user adds it later.
+Conservative workflow for **vmandic/wincher-mcp**. **PyPI:** see [docs/PYPI.md](../../../docs/PYPI.md) (bump `src/wincher_mcp/__init__.py`, `python -m build`, `twine upload`).
 
 ## Hard rules
 

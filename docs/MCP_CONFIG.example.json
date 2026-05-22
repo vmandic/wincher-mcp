@@ -1,6 +1,13 @@
 {
   "mcpServers": {
     "wincher": {
+      "command": "wincher-mcp",
+      "args": [],
+      "env": {
+        "WINCHER_API_KEY": "YOUR_KEY_HERE"
+      }
+    },
+    "wincher-clone": {
       "command": "/ABSOLUTE/PATH/TO/.venv/bin/python",
       "args": [
         "/ABSOLUTE/PATH/TO/wincher-mcp/wincher_mcp_server.py"
