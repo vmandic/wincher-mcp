@@ -18,6 +18,16 @@
       "env": {
         "WINCHER_API_KEY": "YOUR_KEY_HERE"
       }
+    },
+    "wincher-toon": {
+      "command": "/ABSOLUTE/PATH/TO/.venv/bin/python",
+      "args": [
+        "/ABSOLUTE/PATH/TO/wincher-mcp/wincher_mcp_server.py",
+        "--use-toon"
+      ],
+      "env": {
+        "WINCHER_API_KEY": "YOUR_KEY_HERE"
+      }
     }
   }
 }

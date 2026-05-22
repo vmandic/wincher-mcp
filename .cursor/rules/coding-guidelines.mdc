@@ -11,7 +11,7 @@ alwaysApply: false
 ## Python
 
 - Target **Python 3.10+**. Match existing style: `async`/`await`, type hints on new helpers.
-- Keep the server **stdlib + declared deps only** (`mcp`, `httpx`) unless the user approves new packages.
+- Keep the server **stdlib + declared deps only** (`mcp`, `httpx`, `python-toon`) unless the user approves new packages.
 - Prefer small, focused edits in `wincher_mcp_server.py` until a package split is requested.
 
 ## MCP stdio

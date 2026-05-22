@@ -32,7 +32,7 @@ Index: [.cursor/skills/README.md](.cursor/skills/README.md).
 |------|--------|
 | Entry | `wincher_mcp_server.py` (stdio MCP) |
 | Python | 3.10+ |
-| Deps | `pip install -r requirements.txt` (`mcp`, `httpx`); dev: `requirements-dev.txt` |
+| Deps | `pip install -r requirements.txt` (`mcp`, `httpx`, `python-toon`); dev: `requirements-dev.txt` |
 | Test | `pytest -q`; audit: `pip-audit -r requirements.txt -r requirements-dev.txt` |
 | Secret | `WINCHER_API_KEY` (env only; never commit) |
 | Staging | MCP arg `--use-staging` + env `WINCHER_STAGING_API_HOST` (host never in repo) |

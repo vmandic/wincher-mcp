@@ -12,6 +12,7 @@ Connect Cursor, Claude Desktop, or any MCP client to your tracked websites: keyw
 - **Stdio MCP** — local process spawned by the client; no HTTP listener
 - **Nine focused tools** — websites, keywords, rankings, competitors, SERPs, groups, bulk history, annotations
 - **Hardened defaults** — input limits, response caps, safe errors, optional staging host validation
+- **Optional TOON output** — compact [Token-Oriented Object Notation](https://github.com/toon-format/toon) responses to cut LLM token use on large keyword and ranking lists
 
 Maintained fork of [chris-tutt/wincher-mcp-server](https://github.com/chris-tutt/wincher-mcp-server) with agent docs, CI, vendored OpenAPI, and security hardening.
 
@@ -132,7 +133,7 @@ pip install -r requirements.txt
 }
 ```
 
-See [docs/MCP_CONFIG.example.json](docs/MCP_CONFIG.example.json) for production and optional staging entries.
+See [docs/MCP_CONFIG.example.json](docs/MCP_CONFIG.example.json) for production, optional staging, and TOON entries.
 
 **4. Restart the client**, then ask: *“List my Wincher websites”* (`get_websites`).
 
@@ -191,6 +192,23 @@ The server never stores tokens on disk. It reads **`WINCHER_API_KEY`** from the 
 Production API host is **hardcoded** in the server. The staging host must **never** be committed to this repository.
 
 Obtain staging URLs from your Wincher team; wire them only in private MCP config. See [docs/MCP_CONFIG.example.json](docs/MCP_CONFIG.example.json) (`wincher-staging` has no host in the example).
+
+### Optional TOON responses (lower token use)
+
+[TOON](https://github.com/toon-format/toon) is a compact encoding for structured data sent to LLMs. Tabular Wincher payloads (keywords, competitors, bulk history) often use **30–60% fewer tokens** than the default human-readable text layout.
+
+| Mode | How |
+|------|-----|
+| **Server default TOON** | Add `"--use-toon"` to the MCP server `args` array (see `wincher-toon` in [docs/MCP_CONFIG.example.json](docs/MCP_CONFIG.example.json)) |
+| **Per call** | Pass `"output_format": "toon"` on any tool (or `"text"` to force readable text when `--use-toon` is on) |
+
+Responses include a short preamble and TOON body. Decode in Python with `python-toon`:
+
+```python
+from toon import decode
+```
+
+Default remains human-readable **text** when `--use-toon` is not set.
 
 **Wrapper pattern (optional):** a shell script can `source ~/.zsh_secrets` then `exec .venv/bin/python wincher_mcp_server.py` so Cursor opened from the Dock still gets the key. Do not commit that script with secrets inside.
 

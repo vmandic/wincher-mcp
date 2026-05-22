@@ -27,6 +27,7 @@ Claude / Cursor  --stdio-->  MCP Server  --HTTPS Bearer-->  Wincher API (/v1/...
 
 - Production host: `PRODUCTION_BASE_URL` in code (`https://api.wincher.com`).
 - Staging: enabled by MCP arg `--use-staging` (in `args`, not env). Host only from `WINCHER_STAGING_API_HOST`. Never hardcode or document the staging URL in this repo.
+- TOON output: optional MCP arg `--use-toon`, or per-tool `output_format` (`text` | `toon`). Encodes capped API `data` via `python-toon` (`from toon import encode`).
 - Auth: `WINCHER_API_KEY` via `_api_key()` on every request.
 - HTTP: `wincher_request(method, endpoint)`; GET via `make_wincher_request()`.
 - Errors: `_format_http_error()` reports endpoint path only (no request URL; avoids leaking staging host).
